@@ -14,7 +14,7 @@ class Generator_minst(object):
         x_train_full = x_train.reshape(-1, 28*28).astype(float)/255
         x_test_full = x_test.reshape(-1, 28*28).astype(float)/255
 
-        if k == 28*28
+        if k == 28*28:
             x_train_f = StandardScaler().fit_transform(x_train_full)
             x_test_f = StandardScaler().fit_transform(x_test_full)
         else:

@@ -150,6 +150,8 @@ class MetaCluster():
 			model.test_writer.add_summary(summary, self.test_ind)
 			self.test_ind += 1
 		centriods = sess.run(model.predicted_centroids_reshape,feed_dict={model.sequences:data,model.labels:labels})
+		nmi_list = []
+		er_list = []
 		for data_one,label,centriod in zip(data,labels,centriods):
 			kmeans = KMeans(n_clusters=self.k, init=centriod,tol=self.tol, max_iter=self.max_iter, algorithm='full').fit(data_one)
 			# kmeans = K_means(k=self.k,tolerance=self.tol,max_iterations=self.max_iter)
@@ -160,7 +162,9 @@ class MetaCluster():
 			# print("Kmeans:{} and Meta-Kmeans: {}".format(kmeans_nmi,meta_plus_kmeans_nmi))
 			# print(centriod)
 			# print(real_centriod)
-		return meta_plus_kmeans_nmi,meta_plus_kmeans_er
+			nmi_list.append(meta_plus_kmeans_nmi)
+			er_list.append(meta_plus_kmeans_er)
+		return np.mean(nmi_list),np.mean(er_list)
 
 	def save_model(self, sess, epoch):
 		print('\nsaving model...')
@@ -219,7 +223,7 @@ if __name__ == '__main__':
 				centriod_list = []
 				for _ in range(config.batch_size):
 					if config.mnist_train:
-						data_one, labels_one = generator.generate(metaCluster.num_sequence, metaCluster.fea)
+						data_one, labels_one = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k)
 						centriod_one = np.expand_dims(metaCluster.get_k_means_center(data_one), axis=0)
 						data_one = np.expand_dims(data_one, axis=0)
 						labels_one = np.expand_dims(labels_one, axis=0)
@@ -241,7 +245,7 @@ if __name__ == '__main__':
 					centriod_list = []
 					for _ in range(config.batch_size):
 						if config.mnist_train:
-							data_one, labels_one = generator.generate(metaCluster.num_sequence, metaCluster.fea)
+							data_one, labels_one = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k)
 							centriod_one = np.expand_dims(metaCluster.get_k_means_center(data_one), axis=0)
 							data_one = np.expand_dims(data_one, axis=0)
 							labels_one = np.expand_dims(labels_one, axis=0)
@@ -281,7 +285,7 @@ if __name__ == '__main__':
 			meta_plus_kmeans_list_nmi = []
 			for _ in tqdm(range(100)):
 				# data, labels, centriods = metaCluster.create_dataset()
-				data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, is_train=False)
+				data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False)
 				data = np.squeeze(data)
 				labels = np.squeeze(labels)
 

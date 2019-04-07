@@ -14,7 +14,7 @@ class Generator_minst(object):
         x_train_full = x_train.reshape(-1, 28*28).astype(float)/255
         x_test_full = x_test.reshape(-1, 28*28).astype(float)/255
 
-        if k == 28*28:
+        if fea == 28*28:
             x_train_f = StandardScaler().fit_transform(x_train_full)
             x_test_f = StandardScaler().fit_transform(x_test_full)
         else:
@@ -51,8 +51,20 @@ class Generator_minst(object):
             pool = [0,1,2,3,4,5,6,7,8,9]
         elif pool_type == 'HARD_TRAIN':
             pool = [0,1,2,3,5,6,7]
+            if k > 8:
+                raise Exception('k not supported')
         elif pool_type == 'HARD_TEST':
             pool = [4,8,9]
+            if k > 3:
+                raise Exception('k not supported')
+        elif pool_type == 'HALF_TRAIN':
+            pool = [0,1,2,3,4]
+            if k > 5:
+                raise Exception('k not supported')
+        elif pool_type == 'HALF_TEST':
+            pool = [5,6,7,8,9]
+            if k > 5:
+                raise Exception('k not supported')
         else:
             raise Exception('pool_type not supported')
 

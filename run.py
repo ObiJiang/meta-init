@@ -12,11 +12,11 @@ def run_cmd(cmd):
 
 run_cmd('rm -rf test.txt')
 
-num_layers_list = [2,3,4,5,6,7]
+num_layers_list = [3,4,5,6,7]
 fea_list = [25, 50, 100, 150, 200, 250, 300]
 num_sequence_list = [500, 1000, 2500, 5000]
-kmeans_k_list = [3 , 5, 10, 15]
-k_list = [2,3,4,5]
+kmeans_k_list = [3, 5, 10, 15]
+k_list = [5]
 all_comb = itertools.product(num_layers_list, fea_list, num_sequence_list, kmeans_k_list, k_list)
 length = len(list(all_comb))
 all_comb = itertools.product(num_layers_list, fea_list, num_sequence_list, kmeans_k_list, k_list)

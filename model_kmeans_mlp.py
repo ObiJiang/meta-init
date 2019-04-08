@@ -220,13 +220,17 @@ if __name__ == '__main__':
 	parser.add_argument('--tol',default=1e-4,type=float)
 	parser.add_argument('--max_iter',default=300,type=int)
 	parser.add_argument('--algo',default='auto')
+	parser.add_argument('--use_gpu', default=False, action='store_true')
 
 	config = parser.parse_args()
 	generator = Generator_minst(fea=config.fea)
+	tfconfig = tf.ConfigProto()
+	if config.use_gpu:
+		tfconfig.gpu_options.allow_growth = True
 
 	if not config.test:
 		metaCluster = MetaCluster(config)
-		with tf.Session() as sess:
+		with tf.Session(config=tfconfig) as sess:
 			sess.run(tf.global_variables_initializer())
 			# training
 			for train_ind in tqdm(range(int(config.training_exp_num))):
@@ -276,7 +280,7 @@ if __name__ == '__main__':
 	else:
 		config.batch_size = 1
 		metaCluster = MetaCluster(config)
-		with tf.Session() as sess:
+		with tf.Session(config=tfconfig) as sess:
 			""" Reload parameters """
 			sess.run(tf.global_variables_initializer())
 			vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='core')

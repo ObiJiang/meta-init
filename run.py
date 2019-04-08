@@ -10,8 +10,6 @@ def run_cmd(cmd):
 	logging.info("Running command: {:}".format(cmd))
 	subprocess.check_call(cmd,shell=True)
 
-
-
 run_cmd('rm -rf test.txt')
 
 num_layers_list = [2,3,4,5,6,7]

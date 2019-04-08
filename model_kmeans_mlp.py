@@ -213,7 +213,7 @@ if __name__ == '__main__':
 	parser.add_argument('--fea', default=2, type=int)
 	parser.add_argument('--num_sequence', default=100, type=int)
 	parser.add_argument('--memory_size', default=100, type=int)
-	parser.add_argument('--training_exp_num', default=10, type=int)
+	parser.add_argument('--training_exp_num', default=100, type=int)
 	parser.add_argument('--k',default=5,type=int)
 	parser.add_argument('--kmeans_k',default=5,type=int)
 	parser.add_argument('--num_layers',default=3,type=int)
@@ -229,7 +229,7 @@ if __name__ == '__main__':
 		with tf.Session() as sess:
 			sess.run(tf.global_variables_initializer())
 			# training
-			for train_ind in range(int(config.training_exp_num)):
+			for train_ind in tqdm(range(int(config.training_exp_num))):
 				data_list = []
 				labels_list = []
 				centriod_list = []

@@ -3,7 +3,6 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
-from sklearn.decomposition import RandomizedPCA
 
 class Generator_minst(object):
 

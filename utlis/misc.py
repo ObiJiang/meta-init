@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import sys
 
 def sample_floats(low, high, k=1):
     """ Return a k-length list of unique random floats

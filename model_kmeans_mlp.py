@@ -82,7 +82,7 @@ class MetaCluster():
 			   centriod
 			   #np.expand_dims(mean[sort_ind,:],axis=0)
 
-	def denseBlock(self,input, number_filter, kernel_size=2, dilation_rate=1, name="denseBlock"):
+	def denseBlock(self,input, number_filter, kernel_size=20, dilation_rate=1, name="denseBlock"):
 		with tf.variable_scope(name):
 			xf = tf.layers.conv1d(input,number_filter,kernel_size,dilation_rate=dilation_rate,padding='same',name='xf')
 			xg = tf.layers.conv1d(input,number_filter,kernel_size,dilation_rate=dilation_rate,padding='same',name='xg')
@@ -296,6 +296,7 @@ if __name__ == '__main__':
 
 			kmeans_loss_list = []
 			meta_plus_kmeans_loss_list  = []
+			kmeans_random_loss_list = []
 			for _ in range(100):
 				# data, labels, centriods = metaCluster.create_dataset()
 				data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, pool_type='HALF_TEST')
@@ -309,12 +310,21 @@ if __name__ == '__main__':
 				kmeans_loss = kmeans.inertia_
 				kmeans_loss_list.append(kmeans_loss)
 
+				""" Kmeans """
+				kmeans_random = KMeans(n_clusters=metaCluster.kmeans_k,init='random',n_init=1,random_state=0,tol=metaCluster.tol, max_iter=metaCluster.max_iter, algorithm='full').fit(data)
+				# kmeans = K_means(k=metaCluster.k,tolerance=metaCluster.tol,max_iterations=metaCluster.max_iter)
+				# kmeans_labels = kmeans.clustering(data)
+				kmeans_random_loss = kmeans_random.inertia_
+				kmeans_random_loss_list.append(kmeans_random_loss)
+
 				data = np.expand_dims(data, axis=0)
 				labels = np.expand_dims(labels, axis=0)
 				meta_plus_kmeans_loss = metaCluster.test(data,labels,sess)
 				meta_plus_kmeans_loss_list.append(meta_plus_kmeans_loss)
 				
-			print("K-Means loss (inertia): Kmeans:{:.2f}+-{:.2f} and Meta-Kmeans: {:.2f}+-{:.2f}".format(np.mean(kmeans_loss_list),np.std(kmeans_loss_list),np.mean(meta_plus_kmeans_loss_list),np.std(meta_plus_kmeans_loss_list)))
+			print("Kmeans:{:.2f}+-{:.2f}".format(np.mean(kmeans_loss_list),np.std(kmeans_loss_list)))
+			print("Meta-Kmeans: {:.2f}+-{:.2f}".format(np.mean(meta_plus_kmeans_loss_list),np.std(meta_plus_kmeans_loss_list)))
+			print("K-Means random: {:.2f}+-{:.2f}".format(np.mean(kmeans_random_loss_list),np.std(kmeans_random_loss_list)))
 			# print("Error Rate: Kmeans:{:.2f}+-{:.2f} and Meta-Kmeans: {:.2f}+-{:.2f}".format(np.mean(kmeans_list_er),np.std(kmeans_list_er),np.mean(meta_plus_kmeans_list_er),np.std(meta_plus_kmeans_list_er)))
 			# print("NMI: Kmeans:{:.2f}+-{:.2f} and Meta-Kmeans: {:.2f}+-{:.2f}".format(np.mean(kmeans_list_nmi),np.std(kmeans_list_nmi),np.mean(meta_plus_kmeans_list_nmi),np.std(meta_plus_kmeans_list_nmi)))
 

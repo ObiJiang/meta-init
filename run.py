@@ -12,11 +12,13 @@ def run_cmd(cmd):
 
 run_cmd('rm -rf test.txt')
 
-num_layers_list = [3,4,5,6,7]
-fea_list = [25, 50, 100, 150, 200, 250, 300]
-num_sequence_list = [500, 1000, 2500, 5000]
-kmeans_k_list = [3, 5, 10, 15]
+num_layers_list = [3]
+fea_list = [25]
+#fea_list = [25, 50, 100, 150, 200, 250, 300]
+num_sequence_list = [1000]
+kmeans_k_list = [5]
 k_list = [5]
+
 all_comb = itertools.product(num_layers_list, fea_list, num_sequence_list, kmeans_k_list, k_list)
 length = len(list(all_comb))
 all_comb = itertools.product(num_layers_list, fea_list, num_sequence_list, kmeans_k_list, k_list)
@@ -36,7 +38,7 @@ for num_layers,fea,num_sequence,kmeans_k,k in tqdm(all_comb,total=length):
 	 --model_save_dir {:} --summary_dir {:} --mnist_train | tee -a test.txt'.format(num_layers, fea, num_sequence, kmeans_k, k, out_dir, summary_dir)
 	run_cmd(cmd)
 
-	for max_iter in range(1,31):
+	for max_iter in [1,2,3,4,5,10,15,20,25,30]:
 		desc_cmd = 'echo "' + str(max_iter) + '">> test.txt'
 		run_cmd(desc_cmd)
 		# test

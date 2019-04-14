@@ -42,6 +42,8 @@ class MetaCluster():
 		self.is_train = not config.test
 		self.mlp_width = 100
 		self.summary_dir = config.summary_dir
+		self.conv_filter_size = config.conv_filter_size
+		self.l2_regularizer_coeff = config.l2_regularizer_coeff
 		self.model = self.model()
 		self.pic_ind = 1
 		self.tol = config.tol
@@ -82,7 +84,7 @@ class MetaCluster():
 			   centriod
 			   #np.expand_dims(mean[sort_ind,:],axis=0)
 
-	def denseBlock(self,input, number_filter, kernel_size=300, dilation_rate=1, name="denseBlock"):
+	def denseBlock(self,input, number_filter, kernel_size=2, dilation_rate=1, name="denseBlock"):
 		with tf.variable_scope(name):
 			xf = tf.layers.conv1d(input,number_filter,kernel_size,dilation_rate=dilation_rate,padding='same',name='xf')
 			xg = tf.layers.conv1d(input,number_filter,kernel_size,dilation_rate=dilation_rate,padding='same',name='xg')
@@ -98,9 +100,9 @@ class MetaCluster():
 
 		""" Define MLP networl """
 		with tf.variable_scope('core'):
-			# denseBlock_1 = self.denseBlock(sequences, self.fea//2, name='tcBlock_1')
+			# denseBlock_1 = self.denseBlock(sequences, self.fea//2, kernel_size=self.conv_filter_size, name='tcBlock_1')
 			# denseBlock_relu = tf.nn.relu(denseBlock_1)
-			# denseBlock_2 = self.denseBlock(denseBlock_relu, 1, name='tcBlock_2')
+			# denseBlock_2 = self.denseBlock(denseBlock_relu, 1, kernel_size=self.conv_filter_size, name='tcBlock_2')
 			# denseBlock_2_relu = tf.nn.relu(denseBlock_2)
 
 			# mlp_inputs = tf.reshape(denseBlock_2_relu,[self.batch_size,self.num_sequence])
@@ -116,7 +118,7 @@ class MetaCluster():
 
 			mlp_inputs = tf.reshape(sequences, [self.batch_size, self.num_sequence * self.fea])
 			for i in range(self.num_layers):
-				mlp_outputs = tf.layers.dense(mlp_inputs,self.mlp_width)
+				mlp_outputs = tf.layers.dense(mlp_inputs,self.mlp_width,kernel_regularizer=tf.contrib.layers.l2_regularizer(self.l2_regularizer_coeff))
 				mlp_relu = tf.nn.relu(mlp_outputs)
 				mlp_norm = tf.layers.batch_normalization(mlp_relu, training=self.is_train)
 				if i > 0:
@@ -130,7 +132,7 @@ class MetaCluster():
 
 		loss = tf.losses.mean_squared_error(centriod,predicted_centroids_reshape)
 
-		opt = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(loss)
+		opt = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(loss+tf.losses.get_regularization_loss())
 
 		tf.summary.scalar('loss', loss)
 
@@ -228,8 +230,10 @@ if __name__ == '__main__':
 	parser.add_argument('--kmeans_k',default=5,type=int)
 	parser.add_argument('--num_layers',default=3,type=int)
 	parser.add_argument('--tol',default=1e-4,type=float)
+	parser.add_argument('--l2_regularizer_coeff',default=1e-4,type=float)
+	parser.add_argument('--conv_filter_size',default=2,type=int)
 	parser.add_argument('--max_iter',default=300,type=int)
-	
+
 	parser.add_argument('--algo',default='auto')
 	parser.add_argument('--use_gpu', default=False, action='store_true')
 

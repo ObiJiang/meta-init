@@ -82,7 +82,7 @@ class MetaCluster():
 			   centriod
 			   #np.expand_dims(mean[sort_ind,:],axis=0)
 
-	def denseBlock(self,input, number_filter, kernel_size=20, dilation_rate=1, name="denseBlock"):
+	def denseBlock(self,input, number_filter, kernel_size=100, dilation_rate=1, name="denseBlock"):
 		with tf.variable_scope(name):
 			xf = tf.layers.conv1d(input,number_filter,kernel_size,dilation_rate=dilation_rate,padding='same',name='xf')
 			xg = tf.layers.conv1d(input,number_filter,kernel_size,dilation_rate=dilation_rate,padding='same',name='xg')
@@ -98,13 +98,23 @@ class MetaCluster():
 
 		""" Define MLP networl """
 		with tf.variable_scope('core'):
-			denseBlock_1 = self.denseBlock(sequences, self.fea//2, name='tcBlock_1')
-			denseBlock_relu = tf.nn.relu(denseBlock_1)
-			denseBlock_2 = self.denseBlock(denseBlock_relu, 1, name='tcBlock_2')
-			denseBlock_2_relu = tf.nn.relu(denseBlock_2)
+			# denseBlock_1 = self.denseBlock(sequences, self.fea//2, name='tcBlock_1')
+			# denseBlock_relu = tf.nn.relu(denseBlock_1)
+			# denseBlock_2 = self.denseBlock(denseBlock_relu, 1, name='tcBlock_2')
+			# denseBlock_2_relu = tf.nn.relu(denseBlock_2)
 
-			mlp_inputs = tf.reshape(denseBlock_2_relu,[self.batch_size,self.num_sequence])
+			# mlp_inputs = tf.reshape(denseBlock_2_relu,[self.batch_size,self.num_sequence])
 
+			# for i in range(self.num_layers):
+			# 	mlp_outputs = tf.layers.dense(mlp_inputs,self.mlp_width)
+			# 	mlp_relu = tf.nn.relu(mlp_outputs)
+			# 	mlp_norm = tf.layers.batch_normalization(mlp_relu, training=self.is_train)
+			# 	if i > 0:
+			# 		mlp_inputs =  mlp_inputs + mlp_norm
+			# 	else:
+			# 		mlp_inputs = mlp_norm
+
+			mlp_inputs = tf.reshape(sequences, [self.batch_size, self.num_sequence * self.fea])
 			for i in range(self.num_layers):
 				mlp_outputs = tf.layers.dense(mlp_inputs,self.mlp_width)
 				mlp_relu = tf.nn.relu(mlp_outputs)
@@ -297,34 +307,39 @@ if __name__ == '__main__':
 			kmeans_loss_list = []
 			meta_plus_kmeans_loss_list  = []
 			kmeans_random_loss_list = []
-			for _ in range(100):
-				# data, labels, centriods = metaCluster.create_dataset()
-				data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, pool_type='HALF_TEST')
-				data = np.squeeze(data)
-				labels = np.squeeze(labels)
+			for itr in [1,2,3,4,5,10,15,20,25,30]:
+				metaCluster.max_iter = itr
+				for _ in range(100):
+					# data, labels, centriods = metaCluster.create_dataset()
+					data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, pool_type='HALF_TEST')
+					data = np.squeeze(data)
+					labels = np.squeeze(labels)
 
-				""" Kmeans """
-				kmeans = KMeans(n_clusters=metaCluster.kmeans_k,n_init=1,random_state=0,tol=metaCluster.tol, max_iter=metaCluster.max_iter, algorithm='full').fit(data)
-				# kmeans = K_means(k=metaCluster.k,tolerance=metaCluster.tol,max_iterations=metaCluster.max_iter)
-				# kmeans_labels = kmeans.clustering(data)
-				kmeans_loss = kmeans.inertia_
-				kmeans_loss_list.append(kmeans_loss)
+					""" Kmeans """
+					kmeans = KMeans(n_clusters=metaCluster.kmeans_k,n_init=1,random_state=0,tol=metaCluster.tol, max_iter=metaCluster.max_iter, algorithm='full').fit(data)
+					# kmeans = K_means(k=metaCluster.k,tolerance=metaCluster.tol,max_iterations=metaCluster.max_iter)
+					# kmeans_labels = kmeans.clustering(data)
+					kmeans_loss = kmeans.inertia_
+					kmeans_loss_list.append(kmeans_loss)
 
-				""" Kmeans """
-				kmeans_random = KMeans(n_clusters=metaCluster.kmeans_k,init='random',n_init=1,random_state=0,tol=metaCluster.tol, max_iter=metaCluster.max_iter, algorithm='full').fit(data)
-				# kmeans = K_means(k=metaCluster.k,tolerance=metaCluster.tol,max_iterations=metaCluster.max_iter)
-				# kmeans_labels = kmeans.clustering(data)
-				kmeans_random_loss = kmeans_random.inertia_
-				kmeans_random_loss_list.append(kmeans_random_loss)
+					""" Kmeans """
+					kmeans_random = KMeans(n_clusters=metaCluster.kmeans_k,init='random',n_init=1,random_state=0,tol=metaCluster.tol, max_iter=metaCluster.max_iter, algorithm='full').fit(data)
+					# kmeans = K_means(k=metaCluster.k,tolerance=metaCluster.tol,max_iterations=metaCluster.max_iter)
+					# kmeans_labels = kmeans.clustering(data)
+					kmeans_random_loss = kmeans_random.inertia_
+					kmeans_random_loss_list.append(kmeans_random_loss)
 
-				data = np.expand_dims(data, axis=0)
-				labels = np.expand_dims(labels, axis=0)
-				meta_plus_kmeans_loss = metaCluster.test(data,labels,sess)
-				meta_plus_kmeans_loss_list.append(meta_plus_kmeans_loss)
-				
-			print("Kmeans:{:.2f}+-{:.2f}".format(np.mean(kmeans_loss_list),np.std(kmeans_loss_list)))
-			print("Meta-Kmeans: {:.2f}+-{:.2f}".format(np.mean(meta_plus_kmeans_loss_list),np.std(meta_plus_kmeans_loss_list)))
-			print("K-Means random: {:.2f}+-{:.2f}".format(np.mean(kmeans_random_loss_list),np.std(kmeans_random_loss_list)))
-			# print("Error Rate: Kmeans:{:.2f}+-{:.2f} and Meta-Kmeans: {:.2f}+-{:.2f}".format(np.mean(kmeans_list_er),np.std(kmeans_list_er),np.mean(meta_plus_kmeans_list_er),np.std(meta_plus_kmeans_list_er)))
+					data = np.expand_dims(data, axis=0)
+					labels = np.expand_dims(labels, axis=0)
+					meta_plus_kmeans_loss = metaCluster.test(data,labels,sess)
+					meta_plus_kmeans_loss_list.append(meta_plus_kmeans_loss)
+					
+				print("{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f}".format(np.mean(meta_plus_kmeans_loss_list),np.std(meta_plus_kmeans_loss_list),
+					                                                     np.mean(kmeans_loss_list),np.std(kmeans_loss_list),
+					                                                     np.mean(kmeans_random_loss_list),np.std(kmeans_random_loss_list)))
+			# 	print("Kmeans:{:.2f}+-{:.2f}".format(np.mean(kmeans_loss_list),np.std(kmeans_loss_list)))
+			# 	print("Meta-Kmeans: {:.2f}+-{:.2f}".format(np.mean(meta_plus_kmeans_loss_list),np.std(meta_plus_kmeans_loss_list)))
+			# 	print("K-Means random: {:.2f}+-{:.2f}".format(np.mean(kmeans_random_loss_list),np.std(kmeans_random_loss_list)))
+			# # print("Error Rate: Kmeans:{:.2f}+-{:.2f} and Meta-Kmeans: {:.2f}+-{:.2f}".format(np.mean(kmeans_list_er),np.std(kmeans_list_er),np.mean(meta_plus_kmeans_list_er),np.std(meta_plus_kmeans_list_er)))
 			# print("NMI: Kmeans:{:.2f}+-{:.2f} and Meta-Kmeans: {:.2f}+-{:.2f}".format(np.mean(kmeans_list_nmi),np.std(kmeans_list_nmi),np.mean(meta_plus_kmeans_list_nmi),np.std(meta_plus_kmeans_list_nmi)))
 

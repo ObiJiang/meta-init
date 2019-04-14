@@ -37,10 +37,10 @@ for num_layers,fea,num_sequence,kmeans_k,k in tqdm(all_comb,total=length):
 	desc_cmd = 'echo "' + desc + '">> test_val.txt'
 	run_cmd(desc_cmd)
 
-	# # training
-	# cmd = 'python model_kmeans_mlp.py --num_layers {:} --fea {:} --num_sequence {:} --kmeans_k {:} --k {:} \
-	#  --model_save_dir {:} --summary_dir {:} --mnist_train | tee -a test_train.txt'.format(num_layers, fea, num_sequence, kmeans_k, k, out_dir, summary_dir)
-	# run_cmd(cmd)
+	# training
+	cmd = 'python model_kmeans_mlp.py --num_layers {:} --fea {:} --num_sequence {:} --kmeans_k {:} --k {:} \
+	 --model_save_dir {:} --summary_dir {:} --mnist_train | tee -a test_train.txt'.format(num_layers, fea, num_sequence, kmeans_k, k, out_dir, summary_dir)
+	run_cmd(cmd)
 
 	# for max_iter in [1,2,3,4,5,10,15,20,25,30]:
 	max_iter = 1

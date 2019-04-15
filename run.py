@@ -50,5 +50,5 @@ for num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff
 	run_cmd(desc_cmd)
 	# test
 	cmd = 'python model_kmeans_mlp.py --num_layers {:} --fea {:} --num_sequence {:} --kmeans_k {:} --k {:} \
-	 --model_save_dir {:} --summary_dir {:} --test --max_iter {:} --tol 0 --conv_filter_size {:} --l2_regularizer_coeff{:}| tee -a test_val.txt'.format(num_layers, fea, num_sequence, kmeans_k, k, out_dir, summary_dir, max_iter,conv_filter_size,l2_regularizer_coeff)
+	 --model_save_dir {:} --summary_dir {:} --test --max_iter {:} --tol 0 --conv_filter_size {:} --l2_regularizer_coeff {:}| tee -a test_val.txt'.format(num_layers, fea, num_sequence, kmeans_k, k, out_dir, summary_dir, max_iter,conv_filter_size,l2_regularizer_coeff)
 	run_cmd(cmd)

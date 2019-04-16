@@ -19,7 +19,7 @@ fea_list = [2]
 num_sequence_list = [1000]
 kmeans_k_list = [5]
 k_list = [5]
-conv_filter_size_list = [2]
+conv_filter_size_list = [2,5,25,50,100]
 l2_regularizer_coeff_list = [0.0,0.1,0.01,0.001]
 
 all_comb = itertools.product(num_layers_list, fea_list, num_sequence_list, kmeans_k_list, k_list, conv_filter_size_list, l2_regularizer_coeff_list)

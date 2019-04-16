@@ -100,23 +100,13 @@ class MetaCluster():
 
 		""" Define MLP networl """
 		with tf.variable_scope('core'):
-			# denseBlock_1 = self.denseBlock(sequences, self.fea//2, kernel_size=self.conv_filter_size, name='tcBlock_1')
-			# denseBlock_relu = tf.nn.relu(denseBlock_1)
-			# denseBlock_2 = self.denseBlock(denseBlock_relu, 1, kernel_size=self.conv_filter_size, name='tcBlock_2')
-			# denseBlock_2_relu = tf.nn.relu(denseBlock_2)
+			denseBlock_1 = self.denseBlock(sequences, self.fea//2, kernel_size=self.conv_filter_size, name='tcBlock_1')
+			denseBlock_relu = tf.nn.relu(denseBlock_1)
+			denseBlock_2 = self.denseBlock(denseBlock_relu, 1, kernel_size=self.conv_filter_size, name='tcBlock_2')
+			denseBlock_2_relu = tf.nn.relu(denseBlock_2)
 
-			# mlp_inputs = tf.reshape(denseBlock_2_relu,[self.batch_size,self.num_sequence])
+			mlp_inputs = tf.reshape(denseBlock_2_relu,[self.batch_size,self.num_sequence])
 
-			# for i in range(self.num_layers):
-			# 	mlp_outputs = tf.layers.dense(mlp_inputs,self.mlp_width)
-			# 	mlp_relu = tf.nn.relu(mlp_outputs)
-			# 	mlp_norm = tf.layers.batch_normalization(mlp_relu, training=self.is_train)
-			# 	if i > 0:
-			# 		mlp_inputs =  mlp_inputs + mlp_norm
-			# 	else:
-			# 		mlp_inputs = mlp_norm
-
-			mlp_inputs = tf.reshape(sequences, [self.batch_size, self.num_sequence * self.fea])
 			for i in range(self.num_layers):
 				mlp_outputs = tf.layers.dense(mlp_inputs,self.mlp_width,kernel_regularizer=tf.contrib.layers.l2_regularizer(self.l2_regularizer_coeff))
 				mlp_relu = tf.nn.relu(mlp_outputs)
@@ -125,6 +115,16 @@ class MetaCluster():
 					mlp_inputs =  mlp_inputs + mlp_norm
 				else:
 					mlp_inputs = mlp_norm
+
+			# mlp_inputs = tf.reshape(sequences, [self.batch_size, self.num_sequence * self.fea])
+			# for i in range(self.num_layers):
+			# 	mlp_outputs = tf.layers.dense(mlp_inputs,self.mlp_width,kernel_regularizer=tf.contrib.layers.l2_regularizer(self.l2_regularizer_coeff))
+			# 	mlp_relu = tf.nn.relu(mlp_outputs)
+			# 	mlp_norm = tf.layers.batch_normalization(mlp_relu, training=self.is_train)
+			# 	if i > 0:
+			# 		mlp_inputs =  mlp_inputs + mlp_norm
+			# 	else:
+			# 		mlp_inputs = mlp_norm
 
 			predicted_centroids = tf.layers.dense(mlp_inputs,self.kmeans_k*self.fea)
 

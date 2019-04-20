@@ -18,12 +18,12 @@ class Generator_minst(object):
             x_test_f = StandardScaler().fit_transform(x_test_full)
         else:
             x_norm = StandardScaler().fit_transform(x_train_full)
-            pca = PCA(n_components=fea)
+            pca = PCA(n_components=fea, whiten=True)
             x_train_f = pca.fit_transform(x_norm)
 
 
             x_norm = StandardScaler().fit_transform(x_test_full)
-            pca = PCA(n_components=fea)
+            pca = PCA(n_components=fea, whiten=True)
             x_test_f = pca.fit_transform(x_norm)
 
         """ Random Projection based JL lemma """
@@ -93,6 +93,9 @@ class Generator_minst(object):
 
         # x_all[idx] = x_all[idx]/np.max(np.abs(x_all[idx]))
 
+        x_all -= np.mean(x_all,axis=0)
+        x_all /= np.max(np.abs(x_all),axis=0)
+        print(np.mean(x_all,axis=0))
         return x_all[idx], y_all[idx]
 
 

@@ -95,7 +95,6 @@ class Generator_minst(object):
 
         x_all -= np.mean(x_all,axis=0)
         x_all /= np.max(np.abs(x_all),axis=0)
-        print(np.mean(x_all,axis=0))
         return x_all[idx], y_all[idx]
 
 

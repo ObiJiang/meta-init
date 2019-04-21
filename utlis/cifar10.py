@@ -11,25 +11,25 @@ class Generator_cifar10(object):
 		cifar10 = tf.keras.datasets.cifar10
 		(x_train, y_train), (x_test, y_test) = cifar10.load_data()
 
-		x_train = self._rgb2gray(x_train)
-		x_test = self._rgb2gray(x_test)
+		# x_train = self._rgb2gray(x_train)
+		# x_test = self._rgb2gray(x_test)
 
-		x_train_resized = self._resize(x_train,self.resize_width)
-		x_test_resized = self._resize(x_test,self.resize_width)
+		# x_train_resized = self._resize(x_train,self.resize_width)
+		# x_test_resized = self._resize(x_test,self.resize_width)
 
-		x_train_f = x_train_resized.reshape(-1, self.resize_width *self.resize_width).astype(float)/255
-		x_test_f = x_test_resized.reshape(-1, self.resize_width *self.resize_width).astype(float)/255
+		# x_train_f = x_train_resized.reshape(-1, self.resize_width *self.resize_width).astype(float)/255
+		# x_test_f = x_test_resized.reshape(-1, self.resize_width *self.resize_width).astype(float)/255
 
-		# x_train_full = x_train.reshape(-1, 32*32*3).astype(float)/255
-		# x_test_full = x_test.reshape(-1, 32*32*3).astype(float)/255
+		x_train_full = x_train.reshape(-1, 32*32*3).astype(float)/255
+		x_test_full = x_test.reshape(-1, 32*32*3).astype(float)/255
 
-		# x_norm = StandardScaler().fit_transform(x_train_full)
-		# pca = PCA(n_components=fea, whiten=True)
-		# x_train_f = pca.fit_transform(x_norm)
+		x_norm = StandardScaler().fit_transform(x_train_full)
+		pca = PCA(n_components=fea, whiten=True)
+		x_train_f = pca.fit_transform(x_norm)
 
-		# x_norm = StandardScaler().fit_transform(x_test_full)
-		# pca = PCA(n_components=fea, whiten=True)
-		# x_test_f = pca.fit_transform(x_norm)
+		x_norm = StandardScaler().fit_transform(x_test_full)
+		pca = PCA(n_components=fea, whiten=True)
+		x_test_f = pca.fit_transform(x_norm)
 
 		""" Random Projection based JL lemma """
 		# jl_dim = 2

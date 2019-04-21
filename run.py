@@ -19,7 +19,7 @@ fea_list = [2]
 num_sequence_list = [1000]
 kmeans_k_list = [5]
 k_list = [5]
-conv_filter_size_list = [5,25,50,100]
+conv_filter_size_list = [5,25,50]
 l2_regularizer_coeff_list = [0.0,0.1,0.01]
 
 all_comb = itertools.product(num_layers_list, fea_list, num_sequence_list, kmeans_k_list, k_list, conv_filter_size_list, l2_regularizer_coeff_list)
@@ -30,7 +30,7 @@ for num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff
 	out_dir = './out'+'/'+exp_name
 	summary_dir = './summary_dir' + '/' + exp_name
 
-	desc = "cifar10 training (0-5) numLayers {:} fea {:} numSeq {:} kmeansK {:} k {:} conv_filter_size{:} l2_regularizer_coeff {:}".format(num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff)
+	desc = "cifar10g training (0-5) numLayers {:} fea {:} numSeq {:} kmeansK {:} k {:} conv_filter_size{:} l2_regularizer_coeff {:}".format(num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff)
 
 	# put descriptiont into the output files
 	desc_cmd = 'echo "' + desc + '">> test_train.txt'

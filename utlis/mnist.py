@@ -57,11 +57,11 @@ class Generator_minst(object):
             if k > 3:
                 raise Exception('k not supported')
         elif pool_type == 'HALF_TRAIN':
-            pool = [0,1,2,3,4]
+            pool = [0,3,5,7,8]
             if k > 5:
                 raise Exception('k not supported')
         elif pool_type == 'HALF_TEST':
-            pool = [5,6,7,8,9]
+            pool = [1,2,4,6,9]
             if k > 5:
                 raise Exception('k not supported')
         else:
@@ -93,8 +93,8 @@ class Generator_minst(object):
 
         # x_all[idx] = x_all[idx]/np.max(np.abs(x_all[idx]))
 
-        x_all -= np.mean(x_all,axis=0)
-        x_all /= np.max(np.abs(x_all),axis=0)
+        # x_all -= np.mean(x_all,axis=0)
+        # x_all /= np.max(np.abs(x_all),axis=0)
         return x_all[idx], y_all[idx]
 
 

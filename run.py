@@ -14,7 +14,7 @@ run_cmd('rm -rf test_train.txt')
 run_cmd('rm -rf test_val.txt')
 
 num_layers_list = [3,5]
-fea_list = [25]
+fea_list = [2]
 #fea_list = [25, 50, 100, 150, 200, 250, 300]
 num_sequence_list = [1000]
 kmeans_k_list = [5]
@@ -30,7 +30,7 @@ for num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff
 	out_dir = './out'+'/'+exp_name
 	summary_dir = './summary_dir' + '/' + exp_name
 
-	desc = "mnist training (0-5) numLayers {:} fea {:} numSeq {:} kmeansK {:} k {:} conv_filter_size{:} l2_regularizer_coeff {:}".format(num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff)
+	desc = "cifar10 training (0-5) numLayers {:} fea {:} numSeq {:} kmeansK {:} k {:} conv_filter_size{:} l2_regularizer_coeff {:}".format(num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff)
 
 	# put descriptiont into the output files
 	desc_cmd = 'echo "' + desc + '">> test_train.txt'

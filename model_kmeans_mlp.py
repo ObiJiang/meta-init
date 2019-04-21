@@ -8,6 +8,7 @@ import argparse
 import os
 from tensorflow.python.ops.rnn import _transpose_batch_time
 from utlis.mnist import Generator_minst
+from utlis.cifar10 import Generator_cifar10
 from sklearn.datasets import make_circles
 from sklearn.datasets import make_moons
 from sklearn.cluster import KMeans,DBSCAN,SpectralClustering
@@ -238,7 +239,7 @@ if __name__ == '__main__':
 	parser.add_argument('--use_gpu', default=False, action='store_true')
 
 	config = parser.parse_args()
-	generator = Generator_minst(fea=config.fea)
+	generator = Generator_cifar10(fea=config.fea)
 	tfconfig = tf.ConfigProto()
 	if config.use_gpu:
 		tfconfig.gpu_options.allow_growth = True

@@ -277,7 +277,7 @@ if __name__ == '__main__':
 					centriod_list = []
 					for _ in range(config.batch_size):
 						if config.mnist_train:
-							data_one, labels_one = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, pool_type='HALF_TEST')
+							data_one, labels_one = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, pool_type='HALF_TEST', is_train=False)
 							centriod_one = np.expand_dims(metaCluster.get_k_means_center(data_one), axis=0)
 							data_one = np.expand_dims(data_one, axis=0)
 							labels_one = np.expand_dims(labels_one, axis=0)
@@ -317,7 +317,7 @@ if __name__ == '__main__':
 				metaCluster.max_iter = itr
 				for _ in range(100):
 					# data, labels, centriods = metaCluster.create_dataset()
-					data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, pool_type='HALF_TEST')
+					data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, pool_type='HALF_TEST', is_train=False)
 					data = np.squeeze(data)
 					labels = np.squeeze(labels)
 

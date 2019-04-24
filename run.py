@@ -14,7 +14,7 @@ run_cmd('rm -rf test_train.txt')
 run_cmd('rm -rf test_val.txt')
 
 num_layers_list = [3,5]
-fea_list = [2,25]
+fea_list = [25]
 #fea_list = [25, 50, 100, 150, 200, 250, 300]
 num_sequence_list = [1000]
 kmeans_k_list = [5]
@@ -26,11 +26,11 @@ all_comb = itertools.product(num_layers_list, fea_list, num_sequence_list, kmean
 length = len(list(all_comb))
 all_comb = itertools.product(num_layers_list, fea_list, num_sequence_list, kmeans_k_list, k_list, conv_filter_size_list, l2_regularizer_coeff_list)
 for num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff in tqdm(all_comb,total=length):
-	exp_name = "mnist_numLayers_{:}_fea_{:}_numSeq_{:}_kmeansK_{:}_k_{:}_convFilterSize_{:}_l2RegularizerCoeff_{:}".format(num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff)
+	exp_name = "cifar10_numLayers_{:}_fea_{:}_numSeq_{:}_kmeansK_{:}_k_{:}_convFilterSize_{:}_l2RegularizerCoeff_{:}".format(num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff)
 	out_dir = './out'+'/'+exp_name
 	summary_dir = './summary_dir' + '/' + exp_name
 
-	desc = "mnist training (0-5) numLayers {:} fea {:} numSeq {:} kmeansK {:} k {:} conv_filter_size{:} l2_regularizer_coeff {:}".format(num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff)
+	desc = "cifar10 training (0-5) numLayers {:} fea {:} numSeq {:} kmeansK {:} k {:} conv_filter_size{:} l2_regularizer_coeff {:}".format(num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff)
 
 	# put descriptiont into the output files
 	desc_cmd = 'echo "' + desc + '">> test_train.txt'

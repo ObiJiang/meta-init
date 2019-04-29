@@ -133,9 +133,16 @@ class MetaCluster():
 
 		loss = tf.losses.mean_squared_error(centriod,predicted_centroids_reshape)
 
-		opt = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(loss+tf.losses.get_regularization_loss())
+		diff = tf.reduce_sum(tf.square(tf.expand_dims(sequences, axis=2) - tf.expand_dims(predicted_centroids, axis=1)),axis=3)
+		t_score = 1.0/(1.0 + diff)
+		q = t_score/tf.reduce_sum(t_score,axis=2,keep_dims=True)
 
+		soft_kmeans_loss = tf.reduce_sum(diff * q, axis=2)
+
+		opt = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(loss+tf.losses.get_regularization_loss())
+		kmeans_opt = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(soft_kmeans_loss+tf.losses.get_regularization_loss())
 		tf.summary.scalar('loss', loss)
+		tf.summary.scalar('soft_kmeans_loss', soft_kmeans_loss)
 
 		merged = tf.summary.merge_all()
 		train_writer = tf.summary.FileWriter(self.summary_dir + '/train')
@@ -173,6 +180,12 @@ class MetaCluster():
 		model.train_writer.add_summary(summary, self.train_ind)
 		self.train_ind += 1
 		
+	def kmeans_train(self,data,sess):
+		model = self.model
+		summary, _,loss = sess.run([model.merged,model.kmeans_opt,model.soft_kmeans_loss],feed_dict={model.sequences:data})
+		print("Loss:{}".format(loss))
+		model.train_writer.add_summary(summary, self.train_ind)
+		self.train_ind += 1
 
 	def test(self,data,labels,sess,real_centriods=None,validation=False,centriods=None):
 		model = self.model
@@ -267,8 +280,9 @@ if __name__ == '__main__':
 				data = np.concatenate(data_list)
 				labels = np.concatenate(labels_list)
 				centriods = np.concatenate(centriod_list)
-				metaCluster.train(data,labels,centriods,sess)
-
+				# metaCluster.train(data,labels,centriods,sess)
+				metaCluster.kmeans_train(data,labels,centriods,sess)
+				
 				if train_ind % 10 == 0:
 					print('-----validation-----')
 					# validation

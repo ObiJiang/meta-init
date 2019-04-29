@@ -133,7 +133,7 @@ class MetaCluster():
 
 		loss = tf.losses.mean_squared_error(centriod,predicted_centroids_reshape)
 
-		diff = tf.reduce_sum(tf.square(tf.expand_dims(sequences, axis=2) - tf.expand_dims(predicted_centroids, axis=1)),axis=3)
+		diff = tf.reduce_sum(tf.square(tf.expand_dims(sequences, axis=2) - tf.expand_dims(predicted_centroids_reshape, axis=1)),axis=3)
 		t_score = 1.0/(1.0 + diff)
 		q = t_score/tf.reduce_sum(t_score,axis=2,keep_dims=True)
 

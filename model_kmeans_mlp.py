@@ -281,7 +281,7 @@ if __name__ == '__main__':
 				labels = np.concatenate(labels_list)
 				centriods = np.concatenate(centriod_list)
 				# metaCluster.train(data,labels,centriods,sess)
-				metaCluster.kmeans_train(data,labels,centriods,sess)
+				metaCluster.kmeans_train(data,sess)
 				
 				if train_ind % 10 == 0:
 					print('-----validation-----')

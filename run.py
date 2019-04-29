@@ -30,7 +30,7 @@ for num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff
 	out_dir = './out'+'/'+exp_name
 	summary_dir = './summary_dir' + '/' + exp_name
 
-	desc = "synthetic training (0-5) numLayers {:} fea {:} numSeq {:} kmeansK {:} k {:} conv_filter_size{:} l2_regularizer_coeff {:}".format(num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff)
+	desc = "cifar10 training (0-5) numLayers {:} fea {:} numSeq {:} kmeansK {:} k {:} conv_filter_size{:} l2_regularizer_coeff {:}".format(num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff)
 
 	# put descriptiont into the output files
 	desc_cmd = 'echo "' + desc + '">> test_train.txt'
@@ -41,7 +41,7 @@ for num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff
 
 	# training
 	cmd = 'python model_kmeans_mlp.py --num_layers {:} --fea {:} --num_sequence {:} --kmeans_k {:} --k {:} \
-	 --model_save_dir {:} --summary_dir {:} --conv_filter_size {:} --l2_regularizer_coeff {:}| tee -a test_train.txt'.format(num_layers, fea, num_sequence, kmeans_k, k, out_dir, summary_dir,conv_filter_size,l2_regularizer_coeff)
+	 --model_save_dir {:} --summary_dir {:} --mnist_train --conv_filter_size {:} --l2_regularizer_coeff {:}| tee -a test_train.txt'.format(num_layers, fea, num_sequence, kmeans_k, k, out_dir, summary_dir,conv_filter_size,l2_regularizer_coeff)
 	run_cmd(cmd)
 
 	# for max_iter in [1,2,3,4,5,10,15,20,25,30]:

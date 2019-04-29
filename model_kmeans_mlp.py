@@ -137,7 +137,7 @@ class MetaCluster():
 		t_score = 1.0/(1.0 + diff)
 		q = t_score/tf.reduce_sum(t_score,axis=2,keep_dims=True)
 
-		soft_kmeans_loss = tf.reduce_sum(diff * q, axis=2)
+		soft_kmeans_loss = tf.reduce_mean(tf.reduce_sum(diff * q, axis=2))
 
 		opt = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(loss+tf.losses.get_regularization_loss())
 		kmeans_opt = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(soft_kmeans_loss+tf.losses.get_regularization_loss())

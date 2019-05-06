@@ -143,7 +143,7 @@ class MetaCluster():
 		kmeans_opt = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(soft_kmeans_loss+tf.losses.get_regularization_loss())
 		#tf.summary.scalar('loss', loss)
 		tf.summary.scalar('soft_kmeans_loss', soft_kmeans_loss)
-
+		
 		merged = tf.summary.merge_all()
 		train_writer = tf.summary.FileWriter(self.summary_dir + '/train')
 		test_writer = tf.summary.FileWriter(self.summary_dir + '/test')

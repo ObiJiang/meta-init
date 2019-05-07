@@ -197,13 +197,15 @@ class MetaCluster():
 			print("Val loss:{}".format(loss))
 		centriods = sess.run(model.predicted_centroids_reshape,feed_dict={model.sequences:data,model.labels:labels})
 		loss_list = []
+		er_list = []
 		for data_one,label,centriod in zip(data,labels,centriods):
 			kmeans = KMeans(n_clusters=self.kmeans_k, n_init=1, init=centriod,tol=self.tol, max_iter=self.max_iter, algorithm='full').fit(data_one)
 			kmeans_loss = kmeans.inertia_
 			# meta_plus_kmeans_nmi = self.mutual_info(label,kmeans_labels)
-			# meta_plus_kmeans_er = self.er(label,kmeans_labels)
+			meta_plus_kmeans_er = self.er(label,kmeans.labels_)
 			loss_list.append(kmeans_loss)
-		return np.mean(loss_list)
+			er_list.append(meta_plus_kmeans_er)
+		return np.mean(loss_list), np.mean(er_list)
 
 	def save_model(self, sess, epoch):
 		print('\nsaving model...')
@@ -268,7 +270,7 @@ if __name__ == '__main__':
 				centriod_list = []
 				for _ in range(config.batch_size):
 					if config.mnist_train:
-						data_one, labels_one = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, pool_type='HALF_TRAIN')
+						data_one, labels_one = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k)
 						centriod_one = np.expand_dims(metaCluster.get_k_means_center(data_one), axis=0)
 						data_one = np.expand_dims(data_one, axis=0)
 						labels_one = np.expand_dims(labels_one, axis=0)
@@ -291,7 +293,7 @@ if __name__ == '__main__':
 					centriod_list = []
 					for _ in range(config.batch_size):
 						if config.mnist_train:
-							data_one, labels_one = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, pool_type='HALF_TEST', is_train=False)
+							data_one, labels_one = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False)
 							centriod_one = np.expand_dims(metaCluster.get_k_means_center(data_one), axis=0)
 							data_one = np.expand_dims(data_one, axis=0)
 							labels_one = np.expand_dims(labels_one, axis=0)
@@ -327,11 +329,15 @@ if __name__ == '__main__':
 			kmeans_loss_list = []
 			meta_plus_kmeans_loss_list  = []
 			kmeans_random_loss_list = []
+
+			kmeans_list_er = []
+			kmeans_random_list_er = []
+			meta_plus_kmeans_er_list = []
 			for itr in [1,2,3,4,5,10,15,20,25,30]:
 				metaCluster.max_iter = itr
 				for _ in range(100):
 					# data, labels, centriods = metaCluster.create_dataset()
-					data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, pool_type='HALF_TEST', is_train=False)
+					data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False)
 					data = np.squeeze(data)
 					labels = np.squeeze(labels)
 
@@ -339,6 +345,8 @@ if __name__ == '__main__':
 					kmeans = KMeans(n_clusters=metaCluster.kmeans_k,n_init=1,random_state=0,tol=metaCluster.tol, max_iter=metaCluster.max_iter, algorithm='full').fit(data)
 					# kmeans = K_means(k=metaCluster.k,tolerance=metaCluster.tol,max_iterations=metaCluster.max_iter)
 					# kmeans_labels = kmeans.clustering(data)
+					kmeans_er = metaCluster.er(labels,kmeans.labels_)
+					kmeans_list_er.append(kmeans_er)
 					kmeans_loss = kmeans.inertia_/metaCluster.num_sequence
 					kmeans_loss_list.append(kmeans_loss)
 
@@ -346,17 +354,26 @@ if __name__ == '__main__':
 					kmeans_random = KMeans(n_clusters=metaCluster.kmeans_k,init='random',n_init=1,random_state=0,tol=metaCluster.tol, max_iter=metaCluster.max_iter, algorithm='full').fit(data)
 					# kmeans = K_means(k=metaCluster.k,tolerance=metaCluster.tol,max_iterations=metaCluster.max_iter)
 					# kmeans_labels = kmeans.clustering(data)
+					kmeans_er = metaCluster.er(labels,kmeans_random.labels_)
+					kmeans_random_list_er.append(kmeans_er)
 					kmeans_random_loss = kmeans_random.inertia_/metaCluster.num_sequence
 					kmeans_random_loss_list.append(kmeans_random_loss)
 
 					data = np.expand_dims(data, axis=0)
 					labels = np.expand_dims(labels, axis=0)
-					meta_plus_kmeans_loss = metaCluster.test(data,labels,sess)/metaCluster.num_sequence
-					meta_plus_kmeans_loss_list.append(meta_plus_kmeans_loss)
+					meta_plus_kmeans_loss, er = metaCluster.test(data,labels,sess)
+					meta_plus_kmeans_loss_list.append(meta_plus_kmeans_loss/metaCluster.num_sequence)
+					meta_plus_kmeans_er_list.append(er)
 					
-				print("{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f}".format(np.mean(meta_plus_kmeans_loss_list),np.std(meta_plus_kmeans_loss_list),
-					                                                     np.mean(kmeans_loss_list),np.std(kmeans_loss_list),
-					                                                     np.mean(kmeans_random_loss_list),np.std(kmeans_random_loss_list)))
+				print("{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f}".format(np.mean(meta_plus_kmeans_loss_list),np.std(meta_plus_kmeans_loss_list),
+																		 np.mean(kmeans_loss_list),np.std(kmeans_loss_list),
+																		 np.mean(kmeans_random_loss_list),np.std(kmeans_random_loss_list),
+																		 np.mean(meta_plus_kmeans_er_list),np.std(meta_plus_kmeans_er_list),
+																		 np.mean(kmeans_list_er),np.std(kmeans_list_er),
+																		 np.mean(kmeans_random_list_er),np.std(kmeans_random_list_er)
+
+																		 )
+				)
 			# 	print("Kmeans:{:.2f}+-{:.2f}".format(np.mean(kmeans_loss_list),np.std(kmeans_loss_list)))
 			# 	print("Meta-Kmeans: {:.2f}+-{:.2f}".format(np.mean(meta_plus_kmeans_loss_list),np.std(meta_plus_kmeans_loss_list)))
 			# 	print("K-Means random: {:.2f}+-{:.2f}".format(np.mean(kmeans_random_loss_list),np.std(kmeans_random_loss_list)))

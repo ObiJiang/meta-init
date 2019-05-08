@@ -254,7 +254,7 @@ if __name__ == '__main__':
 	parser.add_argument('--use_gpu', default=False, action='store_true')
 
 	config = parser.parse_args()
-	generator = Generator_minst(fea=config.fea)
+	generator = Generator_cifar10(fea=config.fea)
 	tfconfig = tf.ConfigProto()
 	if config.use_gpu:
 		tfconfig.gpu_options.allow_growth = True

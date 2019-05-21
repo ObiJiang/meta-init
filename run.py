@@ -26,11 +26,11 @@ all_comb = itertools.product(num_layers_list, fea_list, num_sequence_list, kmean
 length = len(list(all_comb))
 all_comb = itertools.product(num_layers_list, fea_list, num_sequence_list, kmeans_k_list, k_list, conv_filter_size_list, l2_regularizer_coeff_list)
 for num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff in tqdm(all_comb,total=length):
-	exp_name = "cifar10_numLayers_{:}_fea_{:}_numSeq_{:}_kmeansK_{:}_k_{:}_convFilterSize_{:}_l2RegularizerCoeff_{:}".format(num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff)
+	exp_name = "fashion_mnist_numLayers_{:}_fea_{:}_numSeq_{:}_kmeansK_{:}_k_{:}_convFilterSize_{:}_l2RegularizerCoeff_{:}".format(num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff)
 	out_dir = './out'+'/'+exp_name
 	summary_dir = './summary_dir' + '/' + exp_name
 
-	desc = "cifar10 training (0-5) numLayers {:} fea {:} numSeq {:} kmeansK {:} k {:} conv_filter_size{:} l2_regularizer_coeff {:}".format(num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff)
+	desc = "fashion mnist training (0-5) numLayers {:} fea {:} numSeq {:} kmeansK {:} k {:} conv_filter_size{:} l2_regularizer_coeff {:}".format(num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff)
 
 	# put descriptiont into the output files
 	desc_cmd = 'echo "' + desc + '">> test_train.txt'

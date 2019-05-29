@@ -60,6 +60,10 @@ class Generator_minst(object):
             pool = [0,3,5,8,9]
             if k > 5:
                 raise Exception('k not supported')
+        elif pool_type == 'EASY_TRAIN':
+            pool = [0, 1]
+        elif pool_type == 'EASY_TEST':
+            pool = [2, 3]
         elif pool_type == 'HALF_TEST':
             pool = [1,2,4,6,7]
             if k > 5:

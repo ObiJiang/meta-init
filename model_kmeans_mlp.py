@@ -142,8 +142,8 @@ class MetaCluster():
 
 		opt = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(loss+tf.losses.get_regularization_loss())
 		kmeans_opt = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(soft_kmeans_loss+tf.losses.get_regularization_loss())
-		#tf.summary.scalar('loss', loss)
-		tf.summary.scalar('soft_kmeans_loss', soft_kmeans_loss)
+		tf.summary.scalar('loss', loss)
+		#tf.summary.scalar('soft_kmeans_loss', soft_kmeans_loss)
 		
 		merged = tf.summary.merge_all()
 		train_writer = tf.summary.FileWriter(self.summary_dir + '/train')
@@ -257,6 +257,7 @@ if __name__ == '__main__':
 	config = parser.parse_args()
 	#generator = Generator_cifar10(fea=config.fea)
 	generator = Generator_fashion_mnist(fea=config.fea)
+	#generator = Generator_minst(fea=config.fea)
 	tfconfig = tf.ConfigProto()
 	if config.use_gpu:
 		tfconfig.gpu_options.allow_growth = True
@@ -284,8 +285,8 @@ if __name__ == '__main__':
 				data = np.concatenate(data_list)
 				labels = np.concatenate(labels_list)
 				centriods = np.concatenate(centriod_list)
-				# metaCluster.train(data,labels,centriods,sess)
-				metaCluster.kmeans_train(data,sess)
+				metaCluster.train(data,labels,centriods,sess)
+				#metaCluster.kmeans_train(data,sess)
 				
 				if train_ind % 10 == 0:
 					print('-----validation-----')
@@ -295,7 +296,7 @@ if __name__ == '__main__':
 					centriod_list = []
 					for _ in range(config.batch_size):
 						if config.mnist_train:
-							data_one, labels_one = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False, pool_type='EASY_TRAIN')
+							data_one, labels_one = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False, pool_type='EASY_TEST')
 							centriod_one = np.expand_dims(metaCluster.get_k_means_center(data_one), axis=0)
 							data_one = np.expand_dims(data_one, axis=0)
 							labels_one = np.expand_dims(labels_one, axis=0)
@@ -339,7 +340,7 @@ if __name__ == '__main__':
 				metaCluster.max_iter = itr
 				for _ in range(100):
 					# data, labels, centriods = metaCluster.create_dataset()
-					data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False, pool_type='EASY_TRAIN')
+					data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False, pool_type='EASY_TEST')
 					data = np.squeeze(data)
 					labels = np.squeeze(labels)
 

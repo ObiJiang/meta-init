@@ -81,9 +81,9 @@ class Generator_fashion_mnist(object):
 		elif pool_type == 'HALF_TEST':
 			pool = [5,6,7,8,9]
 		elif pool_type == 'EASY_TRAIN':
-			pool = [0, 1, 2]
+			pool = [0, 1]
 		elif pool_type == 'EASY_TEST':
-			pool = [0, 1, 2]
+			pool = [2, 3]
 		else:
 			raise Exception('pool_type not supported')
 

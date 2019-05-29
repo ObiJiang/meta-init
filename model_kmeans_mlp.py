@@ -112,7 +112,7 @@ class MetaCluster():
 			for i in range(self.num_layers):
 				mlp_outputs = tf.layers.dense(mlp_inputs,self.mlp_width,kernel_regularizer=tf.contrib.layers.l2_regularizer(self.l2_regularizer_coeff))
 				mlp_relu = tf.nn.relu(mlp_outputs)
-				mlp_norm = tf.layers.batch_normalization(mlp_relu, training=self.is_train)
+				mlp_norm = mlp_relu#tf.layers.batch_normalization(mlp_relu, training=self.is_train)
 				if i > 0:
 					mlp_inputs =  mlp_inputs + mlp_norm
 				else:
@@ -256,8 +256,8 @@ if __name__ == '__main__':
 
 	config = parser.parse_args()
 	#generator = Generator_cifar10(fea=config.fea)
-	generator = Generator_fashion_mnist(fea=config.fea)
-	#generator = Generator_minst(fea=config.fea)
+	#generator = Generator_fashion_mnist(fea=config.fea)
+	generator = Generator_minst(fea=config.fea)
 	tfconfig = tf.ConfigProto()
 	if config.use_gpu:
 		tfconfig.gpu_options.allow_growth = True

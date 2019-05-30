@@ -41,7 +41,7 @@ class MetaCluster():
 		self.knn_k = 5
 		self.kmeans_k = config.kmeans_k
 		self.num_layers = config.num_layers
-		self.is_train = not config.test
+		self.is_train = True
 		self.mlp_width = 100
 		self.summary_dir = config.summary_dir
 		self.conv_filter_size = config.conv_filter_size
@@ -112,7 +112,7 @@ class MetaCluster():
 			for i in range(self.num_layers):
 				mlp_outputs = tf.layers.dense(mlp_inputs,self.mlp_width,kernel_regularizer=tf.contrib.layers.l2_regularizer(self.l2_regularizer_coeff))
 				mlp_relu = tf.nn.relu(mlp_outputs)
-				mlp_norm = mlp_relu#tf.layers.batch_normalization(mlp_relu, training=self.is_train)
+				mlp_norm = tf.layers.batch_normalization(mlp_relu, training=self.is_train)
 				if i > 0:
 					mlp_inputs =  mlp_inputs + mlp_norm
 				else:

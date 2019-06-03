@@ -96,55 +96,38 @@ class MetaCluster():
 			return activations
 
 	def model(self):
-		sequences = tf.placeholder(tf.float32, [self.batch_size, self.num_sequence, self.fea])
-		centriod = tf.placeholder(tf.float32, [self.batch_size, self.kmeans_k, self.fea])
-		labels = tf.placeholder(tf.int32, [self.batch_size, self.num_sequence])
+		sequences = tf.placeholder(tf.float32, [self.batch_size, None, self.fea])
+		centriod = tf.placeholder(tf.float32, [self.batch_size, self.k, self.fea])
+		labels = tf.placeholder(tf.int32, [self.batch_size, None])
 
-		""" Define MLP networl """
+		# cell = tf.nn.rnn_cell.BasicLSTMCell(self.n_unints,state_is_tuple=True)
+		fw_cells = [tf.contrib.rnn.BasicLSTMCell(32) for _ in range(2)]
+		fw_cell = tf.contrib.rnn.MultiRNNCell(fw_cells)
+
+		bw_cells = [tf.contrib.rnn.BasicLSTMCell(32) for _ in range(2)]
+		bw_cell = tf.contrib.rnn.MultiRNNCell(bw_cells)
+
+		""" Define LSTM network """
 		with tf.variable_scope('core'):
-			denseBlock_1 = self.denseBlock(sequences, self.fea//2, kernel_size=self.conv_filter_size, name='tcBlock_1')
-			denseBlock_relu = tf.nn.relu(denseBlock_1)
-			denseBlock_2 = self.denseBlock(denseBlock_relu, 1, kernel_size=self.conv_filter_size, name='tcBlock_2')
-			denseBlock_2_relu = tf.nn.relu(denseBlock_2)
+			# output, states = tf.nn.dynamic_rnn(fw_cell, sequences, dtype=tf.float32)
+			output_two, states = tf.nn.bidirectional_dynamic_rnn(fw_cell, bw_cell, sequences, dtype=tf.float32)
+			output = tf.concat((output_two[0][:,-1,:],output_two[1][:,0,:]), axis=1)
+			predicted_centroids = tf.layers.dense(output,self.k*self.fea)
 
-			mlp_inputs = tf.reshape(denseBlock_2_relu,[self.batch_size,self.num_sequence])
-
-			for i in range(self.num_layers):
-				mlp_outputs = tf.layers.dense(mlp_inputs,self.mlp_width,kernel_regularizer=tf.contrib.layers.l2_regularizer(self.l2_regularizer_coeff))
-				mlp_relu = tf.nn.relu(mlp_outputs)
-				mlp_norm = tf.layers.batch_normalization(mlp_relu, training=self.is_train)
-				if i > 0:
-					mlp_inputs =  mlp_inputs + mlp_norm
-				else:
-					mlp_inputs = mlp_norm
-
-			# mlp_inputs = tf.reshape(sequences, [self.batch_size, self.num_sequence * self.fea])
-			# for i in range(self.num_layers):
-			# 	mlp_outputs = tf.layers.dense(mlp_inputs,self.mlp_width,kernel_regularizer=tf.contrib.layers.l2_regularizer(self.l2_regularizer_coeff))
-			# 	mlp_relu = tf.nn.relu(mlp_outputs)
-			# 	mlp_norm = tf.layers.batch_normalization(mlp_relu, training=self.is_train)
-			# 	if i > 0:
-			# 		mlp_inputs =  mlp_inputs + mlp_norm
-			# 	else:
-			# 		mlp_inputs = mlp_norm
-
-			predicted_centroids = tf.layers.dense(mlp_inputs,self.kmeans_k*self.fea)
-
-		predicted_centroids_reshape = tf.reshape(predicted_centroids,[-1,self.kmeans_k,self.fea])
+		predicted_centroids_reshape = tf.reshape(predicted_centroids,[-1,self.k,self.fea])
 
 		loss = tf.losses.mean_squared_error(centriod,predicted_centroids_reshape)
+		l2 = self.l2_regularizer_coeff * sum(
+		    tf.nn.l2_loss(tf_var)
+		        for tf_var in tf.trainable_variables()
+		        if not ("noreg" in tf_var.name or "Bias" in tf_var.name)
+		)
+		loss += l2
 
-		diff = tf.reduce_sum(tf.square(tf.expand_dims(sequences, axis=2) - tf.expand_dims(predicted_centroids_reshape, axis=1)),axis=3)
-		t_score = 1.0/(1.0 + diff)
-		q = t_score/tf.reduce_sum(t_score,axis=2,keep_dims=True)
+		opt = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(loss)
 
-		soft_kmeans_loss = tf.reduce_mean(tf.reduce_sum(diff * q, axis=2))
-
-		opt = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(loss+tf.losses.get_regularization_loss())
-		kmeans_opt = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(soft_kmeans_loss+tf.losses.get_regularization_loss())
 		tf.summary.scalar('loss', loss)
-		#tf.summary.scalar('soft_kmeans_loss', soft_kmeans_loss)
-		
+
 		merged = tf.summary.merge_all()
 		train_writer = tf.summary.FileWriter(self.summary_dir + '/train')
 		test_writer = tf.summary.FileWriter(self.summary_dir + '/test')
@@ -181,12 +164,6 @@ class MetaCluster():
 		model.train_writer.add_summary(summary, self.train_ind)
 		self.train_ind += 1
 		
-	def kmeans_train(self,data,sess):
-		model = self.model
-		summary, _,loss = sess.run([model.merged,model.kmeans_opt,model.soft_kmeans_loss],feed_dict={model.sequences:data})
-		print("Loss:{}".format(loss))
-		model.train_writer.add_summary(summary, self.train_ind)
-		self.train_ind += 1
 
 	def test(self,data,labels,sess,real_centriods=None,validation=False,centriods=None):
 		model = self.model

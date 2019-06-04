@@ -87,6 +87,7 @@ class MetaCluster():
 			   #np.expand_dims(mean[sort_ind,:],axis=0)
 
 	def denseBlock(self,input, number_filter, kernel_size=2, dilation_rate=1, name="denseBlock"):
+		kernel_size=self.conv_filter_size
 		with tf.variable_scope(name):
 			xf = tf.layers.conv1d(input,number_filter,kernel_size,dilation_rate=dilation_rate,padding='same',name='xf')
 			xg = tf.layers.conv1d(input,number_filter,kernel_size,dilation_rate=dilation_rate,padding='same',name='xg')
@@ -95,6 +96,75 @@ class MetaCluster():
 
 			return activations
 
+	def tcBlock(self,input,number_filter,name='TCBlock'):
+		with tf.variable_scope(name):
+			loop_upper_bound = np.floor(np.log2(self.num_sequence)).astype(np.int32)
+			for i in range(1,loop_upper_bound):
+				input = self.denseBlock(input, 2**i, number_filter, name = 'denseBlock'+str(i))
+			return input
+
+	# def model(self):
+	# 	sequences = tf.placeholder(tf.float32, [self.batch_size, self.num_sequence, self.fea])
+	# 	centriod = tf.placeholder(tf.float32, [self.batch_size, self.kmeans_k, self.fea])
+	# 	labels = tf.placeholder(tf.int32, [self.batch_size, self.num_sequence])
+
+	# 	""" Define MLP networl """
+	# 	with tf.variable_scope('core'):
+	# 		# denseBlock_1 = self.tcBlock(sequences, self.fea//2, name='tcBlock_1')
+	# 		# denseBlock_relu = tf.nn.relu(denseBlock_1)
+	# 		# denseBlock_2 = self.tcBlock(denseBlock_relu, 1, name='tcBlock_2')
+	# 		# denseBlock_2_relu = tf.nn.relu(denseBlock_2)
+
+	# 		denseBlock_1 = self.denseBlock(sequences, self.fea//2, kernel_size=self.conv_filter_size, name='tcBlock_1')
+	# 		denseBlock_relu = tf.nn.relu(denseBlock_1)
+	# 		denseBlock_2 = self.denseBlock(denseBlock_relu, 1, kernel_size=self.conv_filter_size, name='tcBlock_2')
+	# 		denseBlock_2_relu = tf.nn.relu(denseBlock_2)
+
+	# 		mlp_inputs = tf.reshape(denseBlock_2_relu,[self.batch_size,self.num_sequence])
+
+	# 		for i in range(self.num_layers):
+	# 			mlp_outputs = tf.layers.dense(mlp_inputs,self.mlp_width,kernel_regularizer=tf.contrib.layers.l2_regularizer(self.l2_regularizer_coeff))
+	# 			mlp_relu = tf.nn.relu(mlp_outputs)
+	# 			mlp_norm = tf.layers.batch_normalization(mlp_relu, training=self.is_train)
+	# 			if i > 0:
+	# 				mlp_inputs =  mlp_inputs + mlp_norm
+	# 			else:
+	# 				mlp_inputs = mlp_norm
+
+	# 		predicted_centroids = tf.layers.dense(mlp_inputs,self.kmeans_k*self.fea)
+
+	# 	predicted_centroids_reshape = tf.reshape(predicted_centroids,[-1,self.kmeans_k,self.fea])
+
+	# 	loss = tf.losses.mean_squared_error(centriod,predicted_centroids_reshape)
+
+	# 	diff = tf.reduce_sum(tf.square(tf.expand_dims(sequences, axis=2) - tf.expand_dims(predicted_centroids_reshape, axis=1)),axis=3)
+	# 	t_score = 1.0/(1.0 + diff)
+	# 	q = t_score/tf.reduce_sum(t_score,axis=2,keep_dims=True)
+
+	# 	soft_kmeans_loss = tf.reduce_mean(tf.reduce_sum(diff * q, axis=2))
+
+	# 	opt = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(loss+tf.losses.get_regularization_loss())
+	# 	kmeans_opt = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(soft_kmeans_loss+tf.losses.get_regularization_loss())
+	# 	tf.summary.scalar('loss', loss)
+	# 	#tf.summary.scalar('soft_kmeans_loss', soft_kmeans_loss)
+		
+	# 	merged = tf.summary.merge_all()
+	# 	train_writer = tf.summary.FileWriter(self.summary_dir + '/train')
+	# 	test_writer = tf.summary.FileWriter(self.summary_dir + '/test')
+
+	# 	return AttrDict(locals())
+
+	def attentionBlock(self,input,key_size,value_size,name='attentionBlock'):
+		with tf.variable_scope(name):
+			keys = tf.layers.dense(input,key_size,name='keys')
+			query = tf.layers.dense(input,key_size,name='query')
+			logits = tf.matmul(keys,query,transpose_b=True)
+			probs = tf.nn.softmax(logits/np.sqrt(key_size))
+			values = tf.layers.dense(input,value_size,name='values')
+			read = tf.matmul(probs,values)
+
+			return tf.concat([input,read],axis=2)
+
 	def model(self):
 		sequences = tf.placeholder(tf.float32, [self.batch_size, self.num_sequence, self.fea])
 		centriod = tf.placeholder(tf.float32, [self.batch_size, self.kmeans_k, self.fea])
@@ -102,33 +172,16 @@ class MetaCluster():
 
 		""" Define MLP networl """
 		with tf.variable_scope('core'):
-			denseBlock_1 = self.denseBlock(sequences, self.fea//2, kernel_size=self.conv_filter_size, name='tcBlock_1')
-			denseBlock_relu = tf.nn.relu(denseBlock_1)
-			denseBlock_2 = self.denseBlock(denseBlock_relu, 1, kernel_size=self.conv_filter_size, name='tcBlock_2')
-			denseBlock_2_relu = tf.nn.relu(denseBlock_2)
+			tcBlock_1 = self.tcBlock(sequences, 32, name='tcBlock_1')
+			attenBlock_1 = self.attentionBlock(tcBlock_1, 16, 16, name='attenBlock_1')
 
-			mlp_inputs = tf.reshape(denseBlock_2_relu,[self.batch_size,self.num_sequence])
+			tcBlock_2 = self.tcBlock(attenBlock_1, 32, name='tcBlock_2')
+			attenBlock_2 = self.attentionBlock(tcBlock_2, 16, 16, name='attenBlock_2')
 
-			for i in range(self.num_layers):
-				mlp_outputs = tf.layers.dense(mlp_inputs,self.mlp_width,kernel_regularizer=tf.contrib.layers.l2_regularizer(self.l2_regularizer_coeff))
-				mlp_relu = tf.nn.relu(mlp_outputs)
-				mlp_norm = tf.layers.batch_normalization(mlp_relu, training=self.is_train)
-				if i > 0:
-					mlp_inputs =  mlp_inputs + mlp_norm
-				else:
-					mlp_inputs = mlp_norm
-
-			# mlp_inputs = tf.reshape(sequences, [self.batch_size, self.num_sequence * self.fea])
-			# for i in range(self.num_layers):
-			# 	mlp_outputs = tf.layers.dense(mlp_inputs,self.mlp_width,kernel_regularizer=tf.contrib.layers.l2_regularizer(self.l2_regularizer_coeff))
-			# 	mlp_relu = tf.nn.relu(mlp_outputs)
-			# 	mlp_norm = tf.layers.batch_normalization(mlp_relu, training=self.is_train)
-			# 	if i > 0:
-			# 		mlp_inputs =  mlp_inputs + mlp_norm
-			# 	else:
-			# 		mlp_inputs = mlp_norm
-
-			predicted_centroids = tf.layers.dense(mlp_inputs,self.kmeans_k*self.fea)
+		""" Define Policy and Value """
+		with tf.variable_scope('core'):
+			policy = tf.layers.dense(attenBlock_2[:,:,-1],self.kmeans_k*self.fea)
+			predicted_centroids = tf.layers.dense(policy,self.kmeans_k*self.fea)
 
 		predicted_centroids_reshape = tf.reshape(predicted_centroids,[-1,self.kmeans_k,self.fea])
 
@@ -150,7 +203,6 @@ class MetaCluster():
 		test_writer = tf.summary.FileWriter(self.summary_dir + '/test')
 
 		return AttrDict(locals())
-
 	def mutual_info(self,true_label,predicted_label):
 		if len(true_label.shape) == 1:
 			true_label = np.expand_dims(true_label,axis=0)

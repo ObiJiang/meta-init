@@ -110,11 +110,6 @@ class MetaCluster():
 
 	# 	""" Define MLP networl """
 	# 	with tf.variable_scope('core'):
-	# 		# denseBlock_1 = self.tcBlock(sequences, self.fea//2, name='tcBlock_1')
-	# 		# denseBlock_relu = tf.nn.relu(denseBlock_1)
-	# 		# denseBlock_2 = self.tcBlock(denseBlock_relu, 1, name='tcBlock_2')
-	# 		# denseBlock_2_relu = tf.nn.relu(denseBlock_2)
-
 	# 		denseBlock_1 = self.denseBlock(sequences, self.fea//2, kernel_size=self.conv_filter_size, name='tcBlock_1')
 	# 		denseBlock_relu = tf.nn.relu(denseBlock_1)
 	# 		denseBlock_2 = self.denseBlock(denseBlock_relu, 1, kernel_size=self.conv_filter_size, name='tcBlock_2')
@@ -131,9 +126,13 @@ class MetaCluster():
 	# 			else:
 	# 				mlp_inputs = mlp_norm
 
-	# 		predicted_centroids = tf.layers.dense(mlp_inputs,self.kmeans_k*self.fea)
+	# 		# predicted_centroids = tf.layers.dense(mlp_inputs,self.kmeans_k*self.fea)
+	# 		predicted_centroids_list = []
+	# 		for _ in range(self.kmeans_k):
+	# 			predicted_centroids_list.append(tf.expand_dims(tf.layers.dense(mlp_inputs,self.fea), axis=1))
 
-	# 	predicted_centroids_reshape = tf.reshape(predicted_centroids,[-1,self.kmeans_k,self.fea])
+	# 	#predicted_centroids_reshape = tf.reshape(predicted_centroids,[-1,self.kmeans_k,self.fea])
+	# 	predicted_centroids_reshape = tf.concat(predicted_centroids_list, axis=1)
 
 	# 	loss = tf.losses.mean_squared_error(centriod,predicted_centroids_reshape)
 
@@ -171,19 +170,25 @@ class MetaCluster():
 		labels = tf.placeholder(tf.int32, [self.batch_size, self.num_sequence])
 
 		""" Define MLP networl """
+		inp = sequences
 		with tf.variable_scope('core'):
-			tcBlock_1 = self.tcBlock(sequences, 32, name='tcBlock_1')
-			attenBlock_1 = self.attentionBlock(tcBlock_1, 16, 16, name='attenBlock_1')
-
-			tcBlock_2 = self.tcBlock(attenBlock_1, 32, name='tcBlock_2')
-			attenBlock_2 = self.attentionBlock(tcBlock_2, 16, 16, name='attenBlock_2')
+			for i in range(self.num_layers):
+				tcBlock = self.tcBlock(inp, 32, name='tcBlock_{:}'.format(i))
+				attenBlock = self.attentionBlock(tcBlock, 16, 16, name='attenBlock_{:}'.format(i))
+				inp = attenBlock
 
 		""" Define Policy and Value """
 		with tf.variable_scope('core'):
-			policy = tf.layers.dense(attenBlock_2[:,:,-1],self.kmeans_k*self.fea)
-			predicted_centroids = tf.layers.dense(policy,self.kmeans_k*self.fea)
+			policy = attenBlock[:,:,-1] #tf.layers.dense(self.kmeans_k*self.fea)
+		# 	predicted_centroids = tf.layers.dense(policy,self.kmeans_k*self.fea)
 
-		predicted_centroids_reshape = tf.reshape(predicted_centroids,[-1,self.kmeans_k,self.fea])
+		# predicted_centroids_reshape = tf.reshape(predicted_centroids,[-1,self.kmeans_k,self.fea])
+
+		predicted_centroids_list = []
+		for _ in range(self.kmeans_k):
+			predicted_centroids_list.append(tf.expand_dims(tf.layers.dense(policy,self.fea), axis=1))
+
+		predicted_centroids_reshape = tf.concat(predicted_centroids_list, axis=1)
 
 		loss = tf.losses.mean_squared_error(centriod,predicted_centroids_reshape)
 
@@ -193,8 +198,14 @@ class MetaCluster():
 
 		soft_kmeans_loss = tf.reduce_mean(tf.reduce_sum(diff * q, axis=2))
 
-		opt = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(loss+tf.losses.get_regularization_loss())
-		kmeans_opt = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(soft_kmeans_loss+tf.losses.get_regularization_loss())
+		l2 = self.l2_regularizer_coeff * sum(
+		    tf.nn.l2_loss(tf_var)
+		        for tf_var in tf.trainable_variables()
+		        if not ("noreg" in tf_var.name or "Bias" in tf_var.name)
+		)
+
+		opt = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(loss+l2)
+		kmeans_opt = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(soft_kmeans_loss+l2)
 		tf.summary.scalar('loss', loss)
 		#tf.summary.scalar('soft_kmeans_loss', soft_kmeans_loss)
 		
@@ -203,6 +214,7 @@ class MetaCluster():
 		test_writer = tf.summary.FileWriter(self.summary_dir + '/test')
 
 		return AttrDict(locals())
+
 	def mutual_info(self,true_label,predicted_label):
 		if len(true_label.shape) == 1:
 			true_label = np.expand_dims(true_label,axis=0)

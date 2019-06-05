@@ -101,18 +101,18 @@ class MetaCluster():
 		labels = tf.placeholder(tf.int32, [self.batch_size, None])
 
 		# cell = tf.nn.rnn_cell.BasicLSTMCell(self.n_unints,state_is_tuple=True)
-		fw_cells = [tf.contrib.rnn.BasicLSTMCell(32) for _ in range(2)]
+		fw_cells = [tf.contrib.rnn.BasicLSTMCell(32) for _ in range(self.num_layers)]
 		fw_cell = tf.contrib.rnn.MultiRNNCell(fw_cells)
 
-		bw_cells = [tf.contrib.rnn.BasicLSTMCell(32) for _ in range(2)]
+		bw_cells = [tf.contrib.rnn.BasicLSTMCell(32) for _ in range(self.num_layers)]
 		bw_cell = tf.contrib.rnn.MultiRNNCell(bw_cells)
 
 		""" Define LSTM network """
 		with tf.variable_scope('core'):
-			output, states = tf.nn.dynamic_rnn(fw_cell, sequences, dtype=tf.float32)
-			# output_two, states = tf.nn.bidirectional_dynamic_rnn(fw_cell, bw_cell, sequences, dtype=tf.float32)
-			# output = tf.concat((output_two[0][:,-1,:],output_two[1][:,0,:]), axis=1)
-			predicted_centroids = tf.layers.dense(output[:,-1,:],self.k*self.fea)
+			# output, states = tf.nn.dynamic_rnn(fw_cell, sequences, dtype=tf.float32)
+			output_two, states = tf.nn.bidirectional_dynamic_rnn(fw_cell, bw_cell, sequences, dtype=tf.float32)
+			output = tf.concat((output_two[0][:,-1,:],output_two[1][:,0,:]), axis=1)
+			predicted_centroids = tf.layers.dense(output,self.k*self.fea)
 
 		predicted_centroids_reshape = tf.reshape(predicted_centroids,[-1,self.k,self.fea])
 
@@ -250,7 +250,7 @@ if __name__ == '__main__':
 				centriod_list = []
 				for _ in range(config.batch_size):
 					if config.mnist_train:
-						data_one, labels_one = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, pool_type='EASY_TRAIN')
+						data_one, labels_one = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, pool_type='HALF_TRAIN')
 						
 						perm = np.random.permutation(metaCluster.fea)
 						data_one = data_one[:,perm]
@@ -277,7 +277,7 @@ if __name__ == '__main__':
 					centriod_list = []
 					for _ in range(config.batch_size):
 						if config.mnist_train:
-							data_one, labels_one = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False, pool_type='EASY_TEST')
+							data_one, labels_one = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False, pool_type='HALF_TEST')
 							centriod_one = np.expand_dims(metaCluster.get_k_means_center(data_one), axis=0)
 							data_one = np.expand_dims(data_one, axis=0)
 							labels_one = np.expand_dims(labels_one, axis=0)
@@ -321,7 +321,7 @@ if __name__ == '__main__':
 				metaCluster.max_iter = itr
 				for _ in range(100):
 					# data, labels, centriods = metaCluster.create_dataset()
-					data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False, pool_type='EASY_TEST')
+					data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False, pool_type='HALF_TEST')
 					data = np.squeeze(data)
 					labels = np.squeeze(labels)
 

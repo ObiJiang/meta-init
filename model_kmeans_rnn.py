@@ -383,7 +383,8 @@ if __name__ == '__main__':
 						data = np.expand_dims(data, axis=0)
 						labels = np.expand_dims(labels, axis=0)
 						meta_plus_kmeans_loss, er, centriods = metaCluster.test_centers(data,labels,sess)
-						
+						meta_plus_kmeans_loss_list.append(meta_plus_kmeans_loss/metaCluster.num_sequence)
+						meta_plus_kmeans_er_list.append(er)
 						data = np.squeeze(data)
 						labels = np.squeeze(labels)
 

@@ -27,6 +27,19 @@ from scipy.optimize import linear_sum_assignment
 from utlis.kmeans import K_means
 import sys
 
+import errno    
+import os
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+
 class MetaCluster():
 	def __init__(self,config):
 		self.config = config
@@ -185,6 +198,26 @@ class MetaCluster():
 			er_list.append(meta_plus_kmeans_er)
 		return np.mean(loss_list), np.mean(er_list)
 
+	def test_centers(self,data,labels,sess,real_centriods=None,validation=False,centriods=None):
+		model = self.model
+		if validation:
+			summary = sess.run(model.merged,feed_dict={model.sequences:data,model.labels:labels,model.centriod:centriods})
+			model.test_writer.add_summary(summary, self.train_ind)
+			self.test_ind += 1
+			centriods,loss = sess.run([model.predicted_centroids_reshape,model.loss],feed_dict={model.sequences:data,model.labels:labels,model.centriod:centriods})
+			print("Val loss:{}".format(loss))
+		centriods = sess.run(model.predicted_centroids_reshape,feed_dict={model.sequences:data,model.labels:labels})
+		loss_list = []
+		er_list = []
+		for data_one,label,centriod in zip(data,labels,centriods):
+			kmeans = KMeans(n_clusters=self.kmeans_k, n_init=1, init=centriod,tol=self.tol, max_iter=self.max_iter, algorithm='full').fit(data_one)
+			kmeans_loss = kmeans.inertia_
+			# meta_plus_kmeans_nmi = self.mutual_info(label,kmeans_labels)
+			meta_plus_kmeans_er = self.er(label,kmeans.labels_)
+			loss_list.append(kmeans_loss)
+			er_list.append(meta_plus_kmeans_er)
+		return np.mean(loss_list), np.mean(er_list),centriods
+
 	def save_model(self, sess, epoch):
 		print('\nsaving model...')
 
@@ -209,11 +242,13 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 
 	parser.add_argument('--test', default=False, action='store_true')
+	parser.add_argument('--test_centers', default=False, action='store_true')
 	parser.add_argument('--mnist_train', default=False, action='store_true')
 	parser.add_argument('--show_graph', default=False, action='store_true')
 	parser.add_argument('--show_comparison_graph', default=False, action='store_true')
 	parser.add_argument('--max_to_keep', default=3, type=int)
 	parser.add_argument('--model_save_dir', default='./out')
+	parser.add_argument('--pic_save_dir', default='./pics')
 	parser.add_argument('--summary_dir', default='./summary_dir')
 	parser.add_argument('--batch_size', default=100, type=int)
 	parser.add_argument('--fea', default=2, type=int)
@@ -294,70 +329,139 @@ if __name__ == '__main__':
 			metaCluster.save_model(sess,config.training_exp_num)
 
 	else:
-		config.batch_size = 1
-		metaCluster = MetaCluster(config)
-		with tf.Session(config=tfconfig) as sess:
-			""" Reload parameters """
-			sess.run(tf.global_variables_initializer())
-			vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='core')
-			vars_ = {var.name.split(":")[0]: var for var in vars}
-			saver = tf.train.Saver(vars_, max_to_keep=config.max_to_keep)
-			save_dir = config.model_save_dir
+		if config.test_centers:
+			config.batch_size = 1
+			metaCluster = MetaCluster(config)
+			with tf.Session(config=tfconfig) as sess:
+				""" Reload parameters """
+				sess.run(tf.global_variables_initializer())
+				vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='core')
+				vars_ = {var.name.split(":")[0]: var for var in vars}
+				saver = tf.train.Saver(vars_, max_to_keep=config.max_to_keep)
+				save_dir = config.model_save_dir
 
-			checkpoint = tf.train.get_checkpoint_state(save_dir)
-			assert checkpoint is not None, "cannot load checkpoint at {}".format(save_dir)
-			save_path = checkpoint.model_checkpoint_path
-			print("Loading saved model from {}".format(save_path))
-			saver.restore(sess, save_path)
+				checkpoint = tf.train.get_checkpoint_state(save_dir)
+				assert checkpoint is not None, "cannot load checkpoint at {}".format(save_dir)
+				save_path = checkpoint.model_checkpoint_path
+				print("Loading saved model from {}".format(save_path))
+				saver.restore(sess, save_path)
 
-			kmeans_loss_list = []
-			meta_plus_kmeans_loss_list  = []
-			kmeans_random_loss_list = []
+				kmeans_loss_list = []
+				meta_plus_kmeans_loss_list  = []
+				kmeans_random_loss_list = []
 
-			kmeans_list_er = []
-			kmeans_random_list_er = []
-			meta_plus_kmeans_er_list = []
-			for itr in [1,2,3,4,5,10,15,20,25,30]:
-				metaCluster.max_iter = itr
-				for _ in range(100):
-					# data, labels, centriods = metaCluster.create_dataset()
-					data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False, pool_type='HALF_TEST')
-					data = np.squeeze(data)
-					labels = np.squeeze(labels)
+				kmeans_list_er = []
+				kmeans_random_list_er = []
+				meta_plus_kmeans_er_list = []
+				for itr in [1,2,3,4,5,10,15,20,25,30]:
+					mkdir_p(config.pic_save_dir + '/' + "centers_epoch_" + str(itr))
+					metaCluster.max_iter = itr
+					for pic in range(10):
+						# data, labels, centriods = metaCluster.create_dataset()
+						data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False, pool_type='HALF_TEST')
+						data = np.squeeze(data)
+						labels = np.squeeze(labels)
 
-					""" Kmeans """
-					kmeans = KMeans(n_clusters=metaCluster.kmeans_k,n_init=1,random_state=0,tol=metaCluster.tol, max_iter=metaCluster.max_iter, algorithm='full').fit(data)
-					# kmeans = K_means(k=metaCluster.k,tolerance=metaCluster.tol,max_iterations=metaCluster.max_iter)
-					# kmeans_labels = kmeans.clustering(data)
-					kmeans_er = metaCluster.er(labels,kmeans.labels_)
-					kmeans_list_er.append(kmeans_er)
-					kmeans_loss = kmeans.inertia_/metaCluster.num_sequence
-					kmeans_loss_list.append(kmeans_loss)
+						""" Kmeans """
+						kmeans = KMeans(n_clusters=metaCluster.kmeans_k,n_init=1,random_state=0,tol=metaCluster.tol, max_iter=metaCluster.max_iter, algorithm='full').fit(data)
+						# kmeans = K_means(k=metaCluster.k,tolerance=metaCluster.tol,max_iterations=metaCluster.max_iter)
+						# kmeans_labels = kmeans.clustering(data)
+						kmeans_er = metaCluster.er(labels,kmeans.labels_)
+						kmeans_list_er.append(kmeans_er)
+						kmeans_loss = kmeans.inertia_/metaCluster.num_sequence
+						kmeans_loss_list.append(kmeans_loss)
 
-					""" Kmeans """
-					kmeans_random = KMeans(n_clusters=metaCluster.kmeans_k,init='random',n_init=1,random_state=0,tol=metaCluster.tol, max_iter=metaCluster.max_iter, algorithm='full').fit(data)
-					# kmeans = K_means(k=metaCluster.k,tolerance=metaCluster.tol,max_iterations=metaCluster.max_iter)
-					# kmeans_labels = kmeans.clustering(data)
-					kmeans_er = metaCluster.er(labels,kmeans_random.labels_)
-					kmeans_random_list_er.append(kmeans_er)
-					kmeans_random_loss = kmeans_random.inertia_/metaCluster.num_sequence
-					kmeans_random_loss_list.append(kmeans_random_loss)
+						""" Kmeans """
+						kmeans_random = KMeans(n_clusters=metaCluster.kmeans_k,init='random',n_init=1,random_state=0,tol=metaCluster.tol, max_iter=metaCluster.max_iter, algorithm='full').fit(data)
+						# kmeans = K_means(k=metaCluster.k,tolerance=metaCluster.tol,max_iterations=metaCluster.max_iter)
+						# kmeans_labels = kmeans.clustering(data)
+						kmeans_er = metaCluster.er(labels,kmeans_random.labels_)
+						kmeans_random_list_er.append(kmeans_er)
+						kmeans_random_loss = kmeans_random.inertia_/metaCluster.num_sequence
+						kmeans_random_loss_list.append(kmeans_random_loss)
 
-					data = np.expand_dims(data, axis=0)
-					labels = np.expand_dims(labels, axis=0)
-					meta_plus_kmeans_loss, er = metaCluster.test(data,labels,sess)
-					meta_plus_kmeans_loss_list.append(meta_plus_kmeans_loss/metaCluster.num_sequence)
-					meta_plus_kmeans_er_list.append(er)
-					
-				print("{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f}".format(np.mean(meta_plus_kmeans_loss_list),np.std(meta_plus_kmeans_loss_list),
-																		 np.mean(kmeans_loss_list),np.std(kmeans_loss_list),
-																		 np.mean(kmeans_random_loss_list),np.std(kmeans_random_loss_list),
-																		 np.mean(meta_plus_kmeans_er_list),np.std(meta_plus_kmeans_er_list),
-																		 np.mean(kmeans_list_er),np.std(kmeans_list_er),
-																		 np.mean(kmeans_random_list_er),np.std(kmeans_random_list_er)
+						data = np.expand_dims(data, axis=0)
+						labels = np.expand_dims(labels, axis=0)
+						meta_plus_kmeans_loss, er, centriods = metaCluster.test_centers(data,labels,sess)
+						
+						data = np.squeeze(data)
+						labels = np.squeeze(labels)
 
-																		 )
-				)
+						plt.figure()
+						for i in range(config.k):
+						    plt.scatter(data[labels==i,0], data[labels==i,1])
+
+						plt.scatter(centriods[0,:,0],centriods[0,:,1],label='meta', marker="x",  s=100)
+						plt.scatter(kmeans.cluster_centers_[:,0],kmeans.cluster_centers_[:,1],label='kmeans++', marker="x",  s=100)
+						plt.scatter(kmeans_random.cluster_centers_[:,0],kmeans_random.cluster_centers_[:,1],label='kmeans', marker="x",  s=100)
+						plt.legend()
+						plt.savefig(config.pic_save_dir + '/' + "centers_epoch_" + str(itr) + "/" + str(pic)+".png")
+
+		else:
+			config.batch_size = 1
+			metaCluster = MetaCluster(config)
+			with tf.Session(config=tfconfig) as sess:
+				""" Reload parameters """
+				sess.run(tf.global_variables_initializer())
+				vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='core')
+				vars_ = {var.name.split(":")[0]: var for var in vars}
+				saver = tf.train.Saver(vars_, max_to_keep=config.max_to_keep)
+				save_dir = config.model_save_dir
+
+				checkpoint = tf.train.get_checkpoint_state(save_dir)
+				assert checkpoint is not None, "cannot load checkpoint at {}".format(save_dir)
+				save_path = checkpoint.model_checkpoint_path
+				print("Loading saved model from {}".format(save_path))
+				saver.restore(sess, save_path)
+
+				kmeans_loss_list = []
+				meta_plus_kmeans_loss_list  = []
+				kmeans_random_loss_list = []
+
+				kmeans_list_er = []
+				kmeans_random_list_er = []
+				meta_plus_kmeans_er_list = []
+				for itr in [1,2,3,4,5,10,15,20,25,30]:
+					metaCluster.max_iter = itr
+					for _ in range(100):
+						# data, labels, centriods = metaCluster.create_dataset()
+						data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False, pool_type='HALF_TEST')
+						data = np.squeeze(data)
+						labels = np.squeeze(labels)
+
+						""" Kmeans """
+						kmeans = KMeans(n_clusters=metaCluster.kmeans_k,n_init=1,random_state=0,tol=metaCluster.tol, max_iter=metaCluster.max_iter, algorithm='full').fit(data)
+						# kmeans = K_means(k=metaCluster.k,tolerance=metaCluster.tol,max_iterations=metaCluster.max_iter)
+						# kmeans_labels = kmeans.clustering(data)
+						kmeans_er = metaCluster.er(labels,kmeans.labels_)
+						kmeans_list_er.append(kmeans_er)
+						kmeans_loss = kmeans.inertia_/metaCluster.num_sequence
+						kmeans_loss_list.append(kmeans_loss)
+
+						""" Kmeans """
+						kmeans_random = KMeans(n_clusters=metaCluster.kmeans_k,init='random',n_init=1,random_state=0,tol=metaCluster.tol, max_iter=metaCluster.max_iter, algorithm='full').fit(data)
+						# kmeans = K_means(k=metaCluster.k,tolerance=metaCluster.tol,max_iterations=metaCluster.max_iter)
+						# kmeans_labels = kmeans.clustering(data)
+						kmeans_er = metaCluster.er(labels,kmeans_random.labels_)
+						kmeans_random_list_er.append(kmeans_er)
+						kmeans_random_loss = kmeans_random.inertia_/metaCluster.num_sequence
+						kmeans_random_loss_list.append(kmeans_random_loss)
+
+						data = np.expand_dims(data, axis=0)
+						labels = np.expand_dims(labels, axis=0)
+						meta_plus_kmeans_loss, er = metaCluster.test(data,labels,sess)
+						meta_plus_kmeans_loss_list.append(meta_plus_kmeans_loss/metaCluster.num_sequence)
+						meta_plus_kmeans_er_list.append(er)
+						
+					print("{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f}".format(np.mean(meta_plus_kmeans_loss_list),np.std(meta_plus_kmeans_loss_list),
+																			 np.mean(kmeans_loss_list),np.std(kmeans_loss_list),
+																			 np.mean(kmeans_random_loss_list),np.std(kmeans_random_loss_list),
+																			 np.mean(meta_plus_kmeans_er_list),np.std(meta_plus_kmeans_er_list),
+																			 np.mean(kmeans_list_er),np.std(kmeans_list_er),
+																			 np.mean(kmeans_random_list_er),np.std(kmeans_random_list_er)
+
+																			 )
+					)
 			# 	print("Kmeans:{:.2f}+-{:.2f}".format(np.mean(kmeans_loss_list),np.std(kmeans_loss_list)))
 			# 	print("Meta-Kmeans: {:.2f}+-{:.2f}".format(np.mean(meta_plus_kmeans_loss_list),np.std(meta_plus_kmeans_loss_list)))
 			# 	print("K-Means random: {:.2f}+-{:.2f}".format(np.mean(kmeans_random_loss_list),np.std(kmeans_random_loss_list)))

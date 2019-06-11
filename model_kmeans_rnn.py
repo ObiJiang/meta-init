@@ -397,7 +397,7 @@ if __name__ == '__main__':
 						plt.legend()
 						plt.savefig(config.pic_save_dir + '/' + "centers_epoch_" + str(itr) + "/" + str(pic)+".png")
 
-						print("{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f}".format(np.mean(meta_plus_kmeans_loss_list),np.std(meta_plus_kmeans_loss_list),
+					print("{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f}".format(np.mean(meta_plus_kmeans_loss_list),np.std(meta_plus_kmeans_loss_list),
 																			 np.mean(kmeans_loss_list),np.std(kmeans_loss_list),
 																			 np.mean(kmeans_random_loss_list),np.std(kmeans_random_loss_list),
 																			 np.mean(meta_plus_kmeans_er_list),np.std(meta_plus_kmeans_er_list),

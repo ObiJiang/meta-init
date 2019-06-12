@@ -275,7 +275,7 @@ class MetaCluster():
 			meta_plus_kmeans_er = self.er(label,kmeans.labels_)
 			loss_list.append(kmeans_loss)
 			er_list.append(meta_plus_kmeans_er)
-		return np.mean(loss_list), np.mean(er_list), centriod
+		return np.mean(loss_list), np.mean(er_list), centriods
 
 	def save_model(self, sess, epoch):
 		print('\nsaving model...')
@@ -313,7 +313,7 @@ if __name__ == '__main__':
 	parser.add_argument('--fea', default=2, type=int)
 	parser.add_argument('--num_sequence', default=100, type=int)
 	parser.add_argument('--memory_size', default=100, type=int)
-	parser.add_argument('--training_exp_num', default=100, type=int)
+	parser.add_argument('--training_exp_num', default=10, type=int)
 	parser.add_argument('--k',default=5,type=int)
 	parser.add_argument('--kmeans_k',default=5,type=int)
 	parser.add_argument('--num_layers',default=3,type=int)
@@ -388,7 +388,7 @@ if __name__ == '__main__':
 			metaCluster.save_model(sess,config.training_exp_num)
 
 	else:
-				if config.test_centers:
+		if config.test_centers:
 			config.batch_size = 1
 			metaCluster = MetaCluster(config)
 			with tf.Session(config=tfconfig) as sess:

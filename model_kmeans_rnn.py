@@ -392,9 +392,9 @@ if __name__ == '__main__':
 						for i in range(config.k):
 						    plt.scatter(data[labels==i,0], data[labels==i,1])
 
-						plt.scatter(centriods[0,:,0],centriods[0,:,1],label='meta', marker="x",  s=100)
-						plt.scatter(kmeans.cluster_centers_[:,0],kmeans.cluster_centers_[:,1],label='kmeans++', marker="x",  s=100)
-						plt.scatter(kmeans_random.cluster_centers_[:,0],kmeans_random.cluster_centers_[:,1],label='kmeans', marker="x",  s=100)
+						plt.scatter(centriods[0,:,0],centriods[0,:,1],label='meta', marker="*",  s=100, color='k')
+						plt.scatter(kmeans.cluster_centers_[:,0],kmeans.cluster_centers_[:,1],label='kmeans++', marker="s",  s=100,color='k')
+						plt.scatter(kmeans_random.cluster_centers_[:,0],kmeans_random.cluster_centers_[:,1],label='kmeans', marker="^",  s=100,color='k')
 						plt.legend()
 						plt.savefig(config.pic_save_dir + '/' + "centers_epoch_" + str(itr) + "/" + str(pic)+".png")
 

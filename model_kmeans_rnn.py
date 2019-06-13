@@ -216,7 +216,7 @@ class MetaCluster():
 			meta_plus_kmeans_er = self.er(label,kmeans.labels_)
 			loss_list.append(kmeans_loss)
 			er_list.append(meta_plus_kmeans_er)
-		return np.mean(loss_list), np.mean(er_list),centriods
+		return np.mean(loss_list), np.mean(er_list),kmeans.cluster_centers_
 
 	def save_model(self, sess, epoch):
 		print('\nsaving model...')
@@ -357,8 +357,8 @@ if __name__ == '__main__':
 					mkdir_p(config.pic_save_dir + '/' + "centers_epoch_" + str(itr))
 					metaCluster.max_iter = itr
 					for pic in range(10):
-						# data, labels, centriods = metaCluster.create_dataset()
-						data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False, pool_type='HALF_TEST')
+						data, labels, centriods = metaCluster.create_dataset()
+						#data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False, pool_type='HALF_TEST')
 						data = np.squeeze(data)
 						labels = np.squeeze(labels)
 
@@ -434,8 +434,8 @@ if __name__ == '__main__':
 				for itr in [1,2,3,4,5,10,15,20,25,30]:
 					metaCluster.max_iter = itr
 					for _ in range(100):
-						# data, labels, centriods = metaCluster.create_dataset()
-						data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False, pool_type='HALF_TEST')
+						data, labels, centriods = metaCluster.create_dataset()
+						# data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False, pool_type='HALF_TEST')
 						data = np.squeeze(data)
 						labels = np.squeeze(labels)
 

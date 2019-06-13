@@ -42,7 +42,7 @@ for num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff
 
 	# training
 	cmd = 'python model_kmeans_rnn.py --num_layers {:} --fea {:} --num_sequence {:} --kmeans_k {:} --k {:} \
-	 --model_save_dir {:} --summary_dir {:} --mnist_train --conv_filter_size {:} --l2_regularizer_coeff {:} --pic_save_dir {:}| tee -a test_train.txt'.format(num_layers, fea, num_sequence, k, k, out_dir, summary_dir,conv_filter_size,l2_regularizer_coeff,pic_dir)
+	 --model_save_dir {:} --summary_dir {:} --conv_filter_size {:} --l2_regularizer_coeff {:} --pic_save_dir {:}| tee -a test_train.txt'.format(num_layers, fea, num_sequence, k, k, out_dir, summary_dir,conv_filter_size,l2_regularizer_coeff,pic_dir)
 	run_cmd(cmd)
 
 	# for max_iter in [1,2,3,4,5,10,15,20,25,30]:

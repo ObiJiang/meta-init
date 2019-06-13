@@ -301,7 +301,7 @@ class MetaCluster():
 			meta_plus_kmeans_er = self.er(label,kmeans.labels_)
 			loss_list.append(kmeans_loss)
 			er_list.append(meta_plus_kmeans_er)
-		return np.mean(loss_list), np.mean(er_list), centriods
+		return np.mean(loss_list), np.mean(er_list), kmeans.cluster_centers_
 
 	def save_model(self, sess, epoch):
 		print('\nsaving model...')

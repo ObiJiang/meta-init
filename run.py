@@ -41,7 +41,7 @@ for num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff
 	run_cmd(desc_cmd)
 
 	# training
-	cmd = 'python model_kmeans_rnn_loop.py --num_layers {:} --fea {:} --num_sequence {:} --kmeans_k {:} --k {:} \
+	cmd = 'python model_kmeans_rnn.py --num_layers {:} --fea {:} --num_sequence {:} --kmeans_k {:} --k {:} \
 	 --model_save_dir {:} --summary_dir {:} --mnist_train --conv_filter_size {:} --l2_regularizer_coeff {:} --pic_save_dir {:}| tee -a test_train.txt'.format(num_layers, fea, num_sequence, k, k, out_dir, summary_dir,conv_filter_size,l2_regularizer_coeff,pic_dir)
 	run_cmd(cmd)
 
@@ -50,6 +50,6 @@ for num_layers,fea,num_sequence,kmeans_k,k,conv_filter_size,l2_regularizer_coeff
 	desc_cmd = 'echo "' + "Meta, Meta std, K-means++, K-means++ std, K-means, K-means loss std" + '">> test_val.txt'
 	run_cmd(desc_cmd)
 	# test
-	cmd = 'python model_kmeans_rnn_loop.py --test_centers --num_layers {:} --fea {:} --num_sequence {:} --kmeans_k {:} --k {:} \
+	cmd = 'python model_kmeans_rnn.py --test_centers --num_layers {:} --fea {:} --num_sequence {:} --kmeans_k {:} --k {:} \
 	 --model_save_dir {:} --summary_dir {:} --test --max_iter {:} --tol 0 --conv_filter_size {:} --l2_regularizer_coeff {:} --pic_save_dir {:}| tee -a test_val.txt'.format(num_layers, fea, num_sequence, k, k, out_dir, summary_dir, max_iter,conv_filter_size,l2_regularizer_coeff,pic_dir)
 	run_cmd(cmd)

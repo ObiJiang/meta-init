@@ -209,6 +209,8 @@ class MetaCluster():
 		centriods = sess.run(model.predicted_centroids_reshape,feed_dict={model.sequences:data,model.labels:labels})
 		loss_list = []
 		er_list = []
+		k_means_centers = np.zeros_like(centriods)
+		i = 0
 		for data_one,label,centriod in zip(data,labels,centriods):
 			kmeans = KMeans(n_clusters=self.kmeans_k, n_init=1, init=centriod,tol=self.tol, max_iter=self.max_iter, algorithm='full').fit(data_one)
 			kmeans_loss = kmeans.inertia_
@@ -216,7 +218,10 @@ class MetaCluster():
 			meta_plus_kmeans_er = self.er(label,kmeans.labels_)
 			loss_list.append(kmeans_loss)
 			er_list.append(meta_plus_kmeans_er)
-		return np.mean(loss_list), np.mean(er_list),kmeans.cluster_centers_
+			k_means_centers[i,:,:] = kmeans.cluster_centers_
+			i += 1
+
+		return np.mean(loss_list), np.mean(er_list),k_means_centers
 
 	def save_model(self, sess, epoch):
 		print('\nsaving model...')

@@ -18,7 +18,7 @@ fea_list = [2]
 #fea_list = [25, 50, 100, 150, 200, 250, 300]
 num_sequence_list = [1000]
 kmeans_k_list = [1]
-k_list = [2,3,4,5]
+k_list = [4,5]
 conv_filter_size_list = [1]
 l2_regularizer_coeff_list = [0.0,0.01,0.1]
 

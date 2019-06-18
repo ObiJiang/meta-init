@@ -82,9 +82,9 @@ class MetaCluster():
 		sort_ind = np.argsort(mean[:,0])
 
 		for label_ind,ind in enumerate(sort_ind):
-			#cov_factor = np.random.rand(1)*2+1
+			cov_factor = np.random.rand(1)*2+2
 			cov = np.random.randn(self.fea,self.fea)
-			cov = scipy.linalg.orth(cov)
+			cov = scipy.linalg.orth(cov)/cov_factor
 			cov = cov.T @ cov
 			data[labels==label_ind,:] = np.random.multivariate_normal(mean[ind, :], cov, (np.sum(labels==label_ind)))
 

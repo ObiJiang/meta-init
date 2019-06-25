@@ -80,9 +80,9 @@ class MetaCluster():
 		sort_ind = np.argsort(mean[:,0])
 
 		for label_ind,ind in enumerate(sort_ind):
-			#cov_factor = np.random.rand(1)*2+1
+			cov_factor = np.random.rand(1)*2+2
 			cov = np.random.randn(self.fea,self.fea)
-			cov = scipy.linalg.orth(cov)
+			cov = scipy.linalg.orth(cov)/cov_factor
 			cov = cov.T @ cov
 			data[labels==label_ind,:] = np.random.multivariate_normal(mean[ind, :], cov, (np.sum(labels==label_ind)))
 
@@ -268,6 +268,8 @@ class MetaCluster():
 		centriods = sess.run(model.predicted_centroids_reshape,feed_dict={model.sequences:data,model.labels:labels})
 		loss_list = []
 		er_list = []
+		k_means_centers = np.zeros_like(centriods)
+		i = 0
 		for data_one,label,centriod in zip(data,labels,centriods):
 			kmeans = KMeans(n_clusters=self.kmeans_k, n_init=1, init=centriod,tol=self.tol, max_iter=self.max_iter, algorithm='full').fit(data_one)
 			kmeans_loss = kmeans.inertia_
@@ -275,7 +277,10 @@ class MetaCluster():
 			meta_plus_kmeans_er = self.er(label,kmeans.labels_)
 			loss_list.append(kmeans_loss)
 			er_list.append(meta_plus_kmeans_er)
-		return np.mean(loss_list), np.mean(er_list), kmeans.cluster_centers_
+			k_means_centers[i,:,:] = kmeans.cluster_centers_
+			i += 1
+
+		return np.mean(loss_list), np.mean(er_list), k_means_centers
 
 	def save_model(self, sess, epoch):
 		print('\nsaving model...')
@@ -416,8 +421,8 @@ if __name__ == '__main__':
 					mkdir_p(config.pic_save_dir + '/' + "centers_epoch_" + str(itr))
 					metaCluster.max_iter = itr
 					for pic in range(10):
-						# data, labels, centriods = metaCluster.create_dataset()
-						data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False, pool_type='HALF_TEST')
+						data, labels, centriods = metaCluster.create_dataset()
+						# data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False, pool_type='HALF_TEST')
 						data = np.squeeze(data)
 						labels = np.squeeze(labels)
 
@@ -493,8 +498,8 @@ if __name__ == '__main__':
 				for itr in [1,2,3,4,5,10,15,20,25,30]:
 					metaCluster.max_iter = itr
 					for _ in range(100):
-						# data, labels, centriods = metaCluster.create_dataset()
-						data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False, pool_type='HALF_TEST')
+						data, labels, centriods = metaCluster.create_dataset()
+						# data, labels = generator.generate(metaCluster.num_sequence, metaCluster.fea, metaCluster.k, is_train=False, pool_type='HALF_TEST')
 						data = np.squeeze(data)
 						labels = np.squeeze(labels)
 
